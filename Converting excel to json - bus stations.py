@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+
 # PART 1: CONVERT EXCEL TO JSON
 
 print("=" * 70)
@@ -21,6 +22,16 @@ bus_routes = {}
 # Process each row
 for index, row in df.iterrows():
     bus_line = str(row['N° de la ligne']).strip()
+    
+    # FIX: Normalize naming inconsistencies
+    # Convert "X Retour" or "X RETOUR" to "X (Retour)"
+    if bus_line.endswith(' Retour') and '(Retour)' not in bus_line:
+        bus_line = bus_line.replace(' Retour', ' (Retour)')
+    if bus_line.endswith(' RETOUR') and '(Retour)' not in bus_line:
+        bus_line = bus_line.replace(' RETOUR', ' (Retour)')
+    if bus_line.endswith(' retour') and '(Retour)' not in bus_line:
+        bus_line = bus_line.replace(' retour', ' (Retour)')
+    
     stop_number = int(row['N° de station'])
     stop_name = str(row['Nom de station']).strip()
     longitude = float(row['Longitude'])
@@ -71,7 +82,7 @@ output_data = {
 }
 
 # Save to JSON file
-output_path = r"C:\Users\HP\Desktop\TransTu data\Bus\bus_routes_1.json"
+output_path = r"C:\Users\HP\Desktop\TransTu data\Bus\bus_routes.json"
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output_data, f, ensure_ascii=False, indent=2)
 
@@ -126,7 +137,7 @@ max_lat = max(all_lats)
 min_lon = min(all_lons)
 max_lon = max(all_lons)
 
-print("\n ROUTE STATISTICS:")
+print("\n📊 ROUTE STATISTICS:")
 print(f"    Unique Bus Lines: {len(unique_lines)}")
 print(f"    Total Directional Routes: {len(bus_routes_list)}")
 print(f"      - Aller (outbound): {aller_count}")
@@ -155,15 +166,15 @@ lines_with_both = lines_with_aller & lines_with_retour
 lines_only_aller = lines_with_aller - lines_with_retour
 lines_only_retour = lines_with_retour - lines_with_aller
 
-print("\n🔄 DIRECTION COVERAGE:")
+print("\n DIRECTION COVERAGE:")
 print(f"    Lines with BOTH directions: {len(lines_with_both)}")
 print(f"    Lines with ONLY aller: {len(lines_only_aller)}")
 print(f"    Lines with ONLY retour: {len(lines_only_retour)}")
 
 if lines_only_aller:
-    print(f"    Lines without retour: {', '.join(sorted(lines_only_aller))}")
+    print(f"   Lines without retour: {', '.join(sorted(lines_only_aller))}")
 if lines_only_retour:
-    print(f"    Lines without aller: {', '.join(sorted(lines_only_retour))}")
+    print(f"   Lines without aller: {', '.join(sorted(lines_only_retour))}")
 
 # PART 3: GENERATE REPORT TABLE
 
@@ -215,11 +226,11 @@ missing_checks = {
     'Duplicate stop names': len(unique_stop_names) < total_stop_records
 }
 
-# Check coordinate validity (Greater Tunis bounds)
-TUNIS_MIN_LAT = 36.6
-TUNIS_MAX_LAT = 37.0
-TUNIS_MIN_LON = 9.9
-TUNIS_MAX_LON = 10.4
+# Check coordinate validity (Expanded Greater Tunis bounds to include peripheral areas)
+TUNIS_MIN_LAT = 36.50
+TUNIS_MAX_LAT = 37.10
+TUNIS_MIN_LON = 9.60
+TUNIS_MAX_LON = 10.40
 
 invalid_coords = 0
 for route in bus_routes_list:
@@ -232,10 +243,9 @@ print(f"\n Routes with stops: {len(bus_routes_list) - missing_checks['Routes wit
 print(f" Valid coordinates: {total_stop_records - invalid_coords}/{total_stop_records}")
 
 if invalid_coords > 0:
-    print(f"WARNING: {invalid_coords} stops have coordinates outside Greater Tunis bounds")
+    print(f" WARNING: {invalid_coords} stops have coordinates outside Greater Tunis bounds")
 
 # PART 5: SAMPLE DATA
-
 print("\n" + "=" * 70)
 print("SAMPLE DATA")
 print("=" * 70)
