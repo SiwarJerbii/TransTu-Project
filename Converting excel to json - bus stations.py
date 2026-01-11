@@ -82,7 +82,7 @@ output_data = {
 }
 
 # Save to JSON file
-output_path = r"C:\Users\HP\Desktop\TransTu data\Bus\bus_routes.json"
+output_path = r"C:\Users\HP\Desktop\Transtu project\TransTu-Project\bus_routes.json"
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output_data, f, ensure_ascii=False, indent=2)
 
@@ -259,7 +259,7 @@ if bus_routes_list:
     print(f"    Number of stops: {len(first_route['stops'])}")
     print(f"    First stop: {first_route['stops'][0]['stop_name']}")
     print(f"    Last stop: {first_route['stops'][-1]['stop_name']}")
-
+ 
 print("\n" + "=" * 70)
 print(" VERIFICATION COMPLETE!")
 print("=" * 70)
