@@ -88,6 +88,16 @@ def find_direct_routes():
         
         # Filter to only valid routes (optional - can show all)
         valid_routes = [r for r in routes if r['valid']]
+        if len(valid_routes) == 0:
+            return jsonify({
+                'success': True,
+                'start_location': {'latitude': start_lat, 'longitude': start_lon},
+                'end_location': {'latitude': end_lat, 'longitude': end_lon},
+                'routes_found': 0,
+                'routes': [],
+                'valid_routes_only': [],
+                'message': 'No direct bus route found. Try increasing walking radius or use multi-transfer routing.'
+            }), 200
         
         return jsonify({
             'success': True,
