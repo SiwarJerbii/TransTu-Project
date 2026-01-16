@@ -27,10 +27,11 @@ def create_app(config_name=None):
     # Enable CORS
     CORS(app, origins=app.config['CORS_ORIGINS'])
     
-    # Register blueprints - ONLY IMPORT WHAT EXISTS
-    from app.routes import health, routing
+    # Register blueprints
+    from app.routes import health, geocoding, routing
     
     app.register_blueprint(health.bp)
+    app.register_blueprint(geocoding.bp, url_prefix='/api')  # NEW
     app.register_blueprint(routing.bp, url_prefix='/api')
     
     return app

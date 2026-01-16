@@ -104,3 +104,107 @@ def find_direct_routes():
             'success': False,
             'error': f'Internal server error: {str(e)}'
         }), 500
+@bp.route('/routes/search', methods=['POST'])
+def search_routes():
+    """
+    Find routes using addresses or coordinates
+    
+    Request Body (Option 1 - Addresses):
+    {
+        "from": "Avenue Habib Bourguiba, Tunis",
+        "to": "Carthage, Tunisia"
+    }
+    
+    Request Body (Option 2 - Coordinates):
+    {
+        "start": {"latitude": 36.8065, "longitude": 10.1815},
+        "end": {"latitude": 36.8531, "longitude": 10.3239}
+    }
+    
+    Response: Same as /routes/direct
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body is required'
+            }), 400
+        
+        # Check if using addresses (from/to) or coordinates (start/end)
+        if 'from' in data and 'to' in data:
+            # Address-based search
+            from app.services.geocoding_service import geocoding_service
+            
+            from_address = data['from']
+            to_address = data['to']
+            
+            # Geocode start address
+            from_result = geocoding_service.geocode_address(from_address)
+            if not from_result:
+                return jsonify({
+                    'success': False,
+                    'error': f'Start address not found: {from_address}'
+                }), 404
+            
+            # Geocode end address
+            to_result = geocoding_service.geocode_address(to_address)
+            if not to_result:
+                return jsonify({
+                    'success': False,
+                    'error': f'End address not found: {to_address}'
+                }), 404
+            
+            # Extract coordinates
+            start_lat = from_result['latitude']
+            start_lon = from_result['longitude']
+            end_lat = to_result['latitude']
+            end_lon = to_result['longitude']
+            
+            # Find routes
+            routes = routing_service.find_direct_routes(
+                start_lat, start_lon,
+                end_lat, end_lon
+            )
+            
+            valid_routes = [r for r in routes if r['valid']]
+            
+            return jsonify({
+                'success': True,
+                'from_address': {
+                    'address': from_address,
+                    'display_name': from_result['display_name'],
+                    'coordinates': {
+                        'latitude': start_lat,
+                        'longitude': start_lon
+                    }
+                },
+                'to_address': {
+                    'address': to_address,
+                    'display_name': to_result['display_name'],
+                    'coordinates': {
+                        'latitude': end_lat,
+                        'longitude': end_lon
+                    }
+                },
+                'routes_found': len(valid_routes),
+                'routes': routes,
+                'valid_routes_only': valid_routes
+            }), 200
+            
+        elif 'start' in data and 'end' in data:
+            # Coordinate-based search (existing functionality)
+            return find_direct_routes()
+        
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Request must include either ("from" and "to") or ("start" and "end")'
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Internal server error: {str(e)}'
+        }), 500
