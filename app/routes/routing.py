@@ -10,26 +10,6 @@ bp = Blueprint('routing', __name__)
 def find_direct_routes():
     """
     Find direct routes between two locations
-    
-    Request Body:
-    {
-        "start": {
-            "latitude": 36.8065,
-            "longitude": 10.1815
-        },
-        "end": {
-            "latitude": 36.7518,
-            "longitude": 9.9800
-        }
-    }
-    
-    Response:
-    {
-        "success": true,
-        "start_location": {...},
-        "end_location": {...},
-        "routes": [...]
-    }
     """
     try:
         # Validate request body
@@ -51,7 +31,7 @@ def find_direct_routes():
         start = data['start']
         end = data['end']
         
-        # Validate coordinates
+        # Validate coordinates exist
         required_fields = ['latitude', 'longitude']
         for location, name in [(start, 'start'), (end, 'end')]:
             for field in required_fields:
@@ -60,12 +40,25 @@ def find_direct_routes():
                         'success': False,
                         'error': f'Missing {field} in {name} location'
                     }), 400
+                
+                # NEW: Check for null values BEFORE trying to convert
+                if location[field] is None:
+                    return jsonify({
+                        'success': False,
+                        'error': f'{field} cannot be null in {name} location'
+                    }), 400
         
-        # Extract coordinates
-        start_lat = float(start['latitude'])
-        start_lon = float(start['longitude'])
-        end_lat = float(end['latitude'])
-        end_lon = float(end['longitude'])
+        # Extract and validate coordinates
+        try:
+            start_lat = float(start['latitude'])
+            start_lon = float(start['longitude'])
+            end_lat = float(end['latitude'])
+            end_lon = float(end['longitude'])
+        except (ValueError, TypeError) as e:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid coordinate format: coordinates must be numbers'
+            }), 400
         
         # Validate coordinate ranges
         if not (-90 <= start_lat <= 90) or not (-90 <= end_lat <= 90):
@@ -86,18 +79,8 @@ def find_direct_routes():
             end_lat, end_lon
         )
         
-        # Filter to only valid routes (optional - can show all)
+        # Filter to only valid routes
         valid_routes = [r for r in routes if r['valid']]
-        if len(valid_routes) == 0:
-            return jsonify({
-                'success': True,
-                'start_location': {'latitude': start_lat, 'longitude': start_lon},
-                'end_location': {'latitude': end_lat, 'longitude': end_lon},
-                'routes_found': 0,
-                'routes': [],
-                'valid_routes_only': [],
-                'message': 'No direct bus route found. Try increasing walking radius or use multi-transfer routing.'
-            }), 200
         
         return jsonify({
             'success': True,
@@ -110,17 +93,13 @@ def find_direct_routes():
                 'longitude': end_lon
             },
             'routes_found': len(valid_routes),
-            'routes': routes,  # Include all routes (valid + invalid)
+            'routes': routes,
             'valid_routes_only': valid_routes
         }), 200
         
-    except ValueError as e:
-        return jsonify({
-            'success': False,
-            'error': f'Invalid coordinate format: {str(e)}'
-        }), 400
-    
     except Exception as e:
+        # Catch any unexpected errors
+        # In production, log this to a file/monitoring service
         return jsonify({
             'success': False,
             'error': f'Internal server error: {str(e)}'
