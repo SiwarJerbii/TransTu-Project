@@ -7,11 +7,15 @@ TransTu Route Finder - A smart public transportation routing application for Gre
 
 ## Features
 
-- Multimodal route planning (Bus)
-- GPS-based location detection
-- Interactive map visualization
-- Optimized route ranking by travel time
-- Real-time distance calculations
+- ✅ Direct route finding between two locations
+- ✅ Address to coordinates geocoding (Nominatim)
+- ✅ Robust error handling for null/None values
+- ✅ Input validation for coordinate ranges
+- ✅ Multi-modal route planning (Bus)
+- ✅ Real-time distance calculations
+- ✅ Interactive map visualization
+- ✅ Route ranking by travel time
+- ✅ User-friendly messages when routes unavailable
 
 ## 🛠️ Tech Stack
 - **Backend:** Flask (Python)
@@ -79,6 +83,16 @@ docker run -p 5000:5000 transtu-api
 ```http
 GET /health
 ```
+Check if the API is running and responding.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "message": "TransTu API is running",
+  "version": "1.0.0"
+}
+```
 
 ### Geocoding
 ```http
@@ -89,41 +103,85 @@ Content-Type: application/json
   "address": "Avenue Habib Bourguiba, Tunis"
 }
 ```
+Convert address strings to geographic coordinates (latitude, longitude).
 
-### Find Nearest Stops
-```http
-POST /api/stops/nearest
-Content-Type: application/json
-
+**Response:**
+```json
 {
+  "success": true,
+  "address": "Avenue Habib Bourguiba, Tunis",
   "latitude": 36.8065,
-  "longitude": 10.1815,
-  "max_distance": 500
+  "longitude": 10.1815
 }
 ```
 
-### Compute Routes
+### Direct Routes
 ```http
-POST /api/routes/compute
+POST /api/routes/direct
 Content-Type: application/json
 
 {
-  "from": "Avenue Habib Bourguiba, Tunis",
-  "to": "Carthage, Tunisia"
+  "start": {
+    "latitude": 36.8065,
+    "longitude": 10.1815
+  },
+  "end": {
+    "latitude": 36.7518,
+    "longitude": 9.9800
+  }
 }
 ```
+Find direct bus routes between two geographic locations without transfers.
+
+**Response:**
+```json
+{
+  "success": true,
+  "start_location": {
+    "latitude": 36.8065,
+    "longitude": 10.1815
+  },
+  "end_location": {
+    "latitude": 36.7518,
+    "longitude": 9.9800
+  },
+  "routes_found": 2,
+  "routes": [...],
+  "valid_routes_only": [...]
+}
+```
+
+**Error Handling:**
+- Returns 400 if coordinates are null/None
+- Returns 400 if coordinates are invalid format or out of range
+- Returns 200 with empty routes if no direct routes found
 
 ## Project Structure
+```
 TransTu-Project/
-├── app/                # Application code
-│   ├── routes/        # API endpoints
-│   ├── services/      # Business logic
-│   ├── models/        # Data models
-│   └── utils/         # Helper functions
-├── data/              # Transit data (JSON)
-├── scripts/           # Data processing scripts
-├── tests/             # Unit tests
-└── docs/              # Documentation
+├── app/
+│   ├── routes/
+│   │   ├── health.py          # Health check endpoint
+│   │   ├── geocoding.py        # Geocoding API endpoint
+│   │   └── routing.py          # Direct route finding endpoint
+│   ├── services/
+│   │   ├── geocoding_service.py    # Address to coordinates
+│   │   ├── routing_service.py      # Route finding logic
+│   │   └── distance_service.py     # Distance calculations
+│   ├── models/
+│   ├── utils/
+│   │   └── data_loader.py     # Bus routes data loader
+│   └── __init__.py            # App factory
+├── data/
+│   └── bus_routes.json        # Transit data (406 bus routes)
+├── tests/
+│   └── test_routing.py        # Route finding tests
+├── config.py                  # Configuration settings
+├── run.py                     # Application entry point
+├── requirements.txt
+├── Dockerfile
+└── docker-compose.yml
+```
 
 ## 📈 Data Pipeline
 1. **Source:** Ministry of Transport Excel files
