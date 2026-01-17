@@ -1,0 +1,486 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: TransTu API
+meta:
+  id: wrk_1741ea1817734a7cb5e8b8c31a6a6228
+  created: 1768611885737
+  modified: 1768611885737
+  description: ""
+collection:
+  - name: " Basic Endpoints"
+    meta:
+      id: fld_9100f60af0414345b50bc605c927302f
+      created: 1768611885744
+      modified: 1768612251569
+      sortKey: -1768611885744
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/health"
+        name: 1. Health Check
+        meta:
+          id: req_e53aeab459df49edbe9b09895a6cecaa
+          created: 1768611885742
+          modified: 1768612003987
+          isPrivate: false
+          description: Check if API is running
+          sortKey: -1768611885742
+        method: GET
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: " Geocoding"
+    meta:
+      id: fld_2454c9d98127461fa2463095cb8ff857
+      created: 1768611885748
+      modified: 1768612243217
+      sortKey: -1768611885748
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/geocode"
+        name: 2. Geocode Single Address
+        meta:
+          id: req_1d6d13d32f66404088d2aaa249e165e0
+          created: 1768611885746
+          modified: 1768611885746
+          isPrivate: false
+          description: Convert one address to coordinates
+          sortKey: -1768611885746
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "address": "Bab Saadoun, Tunis"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/geocode/batch"
+        name: 3. Geocode Multiple Addresses
+        meta:
+          id: req_98db7fa27baa4053b715d72991c1f199
+          created: 1768611885750
+          modified: 1768612203067
+          isPrivate: false
+          description: Convert multiple addresses at once
+          sortKey: -1768611885846
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "addresses": [
+                "Bab Saadoun, Tunis",
+                "Bab Alioua, Tunis",
+                "Carthage, Tunisia"
+              ]
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: " Route Finding"
+    meta:
+      id: fld_44c9e7352bb548a2bf59223cc10f93b9
+      created: 1768611885754
+      modified: 1768612234977
+      sortKey: -1768611885754
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/routes/direct"
+        name: 4. Direct Routes (Coordinates)
+        meta:
+          id: req_6af0455b6d8441118d14695610f48c2a
+          created: 1768611885752
+          modified: 1768611885752
+          isPrivate: false
+          description: Find direct routes using coordinates
+          sortKey: -1768611885752
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": 36.8065,
+                "longitude": 10.1815
+              },
+              "end": {
+                "latitude": 36.8165,
+                "longitude": 10.1915
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/search"
+        name: 5. Search Routes (Addresses)
+        meta:
+          id: req_fc6cefb89655486eb5b06c6f8e15ba71
+          created: 1768611885756
+          modified: 1768639653168
+          isPrivate: false
+          description: Search routes using addresses
+          sortKey: -1768611885756
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "from": "Bab Saadoun, Tunis",
+              "to": "Bab Alioua, Tunis"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/search"
+        name: 6. Search Routes (Coordinates)
+        meta:
+          id: req_0463cfac798544e9a4e0ff3c32cfd3eb
+          created: 1768611885758
+          modified: 1768611885758
+          isPrivate: false
+          description: Search routes using coordinates
+          sortKey: -1768611885758
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": 36.8065,
+                "longitude": 10.1815
+              },
+              "end": {
+                "latitude": 36.8165,
+                "longitude": 10.1915
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: " Transfer Routes"
+    meta:
+      id: fld_5cc20b7a91734fe1b05cbe8ab561d1da
+      created: 1768611885762
+      modified: 1768612227814
+      sortKey: -1768611885762
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/routes/transfer"
+        name: 7. Transfer Routes (Addresses)
+        meta:
+          id: req_37fe4cfdc81f4e8395059cf1a81ea69e
+          created: 1768611885760
+          modified: 1768611885760
+          isPrivate: false
+          description: Find transfer routes using addresses
+          sortKey: -1768611885760
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "from": "Bab Saadoun, Tunis",
+              "to": "La Marsa, Tunisia",
+              "max_results": 5
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/transfer"
+        name: 8. Transfer Routes (Coordinates)
+        meta:
+          id: req_62ee8da69a314fd9a6ee76919dfed87f
+          created: 1768611885764
+          modified: 1768611885764
+          isPrivate: false
+          description: Find transfer routes using coordinates
+          sortKey: -1768611885764
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": 36.5528116940535,
+                "longitude": 9.9026297180535
+              },
+              "end": {
+                "latitude": 36.8008,
+                "longitude": 10.1865
+              },
+              "max_results": 5
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/transfer"
+        name: 9. Transfer Routes (WORKING TEST - Epicier Lagraa to Tunis Marine)
+        meta:
+          id: req_39636be443d944cab61fbadc8d273392
+          created: 1768611885766
+          modified: 1768611885766
+          isPrivate: false
+          description: "Known working route: Bus 34 → Bus 43 B → Tunis Marine"
+          sortKey: -1768611885766
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": 36.5528116940535,
+                "longitude": 9.9026297180535
+              },
+              "end": {
+                "latitude": 36.8008,
+                "longitude": 10.1865
+              },
+              "max_results": 3
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/transfer"
+        name: 10. Transfer Routes (Close Locations)
+        meta:
+          id: req_19fa1dc899024265bccffed1a4912785
+          created: 1768611885767
+          modified: 1768611885767
+          isPrivate: false
+          description: Test with locations within Greater Tunis
+          sortKey: -1768611885767
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "from": "Jardin Thameur, Tunis",
+              "to": "Lafayette, Tunis",
+              "max_results": 5
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: Edge Cases & Error Testing
+    meta:
+      id: fld_76c5753ee9664d1e9b33fac714bbc105
+      created: 1768611885772
+      modified: 1768639647144
+      sortKey: -1768611885772
+      description: ""
+    children:
+      - url: "{{ _.base_url }}/api/routes/direct"
+        name: 11. Edge Case - Null Coordinates
+        meta:
+          id: req_5772e2568fa54586abe0943d30aa1ed0
+          created: 1768611885770
+          modified: 1768611885770
+          isPrivate: false
+          description: Test error handling for null values
+          sortKey: -1768611885770
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": null,
+                "longitude": 10.1815
+              },
+              "end": {
+                "latitude": 36.8165,
+                "longitude": 10.1915
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/routes/direct"
+        name: 12. Edge Case - Invalid Coordinate Range
+        meta:
+          id: req_f9002960c89c4ba6a8f4bfa0bd24cb15
+          created: 1768611885774
+          modified: 1768611885774
+          isPrivate: false
+          description: Test with out-of-range coordinates
+          sortKey: -1768611885774
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "start": {
+                "latitude": 999,
+                "longitude": 10.1815
+              },
+              "end": {
+                "latitude": 36.8165,
+                "longitude": 10.1915
+              }
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/geocode"
+        name: 13. Edge Case - Empty Address
+        meta:
+          id: req_ad91fafcaa8e464bb8eaa7b728a9427a
+          created: 1768611885776
+          modified: 1768611885776
+          isPrivate: false
+          description: Test with empty address string
+          sortKey: -1768611885776
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "address": ""
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.base_url }}/api/geocode"
+        name: 14. Edge Case - Non-existent Address
+        meta:
+          id: req_79c8920cc0d346c086b63c3adb7b9887
+          created: 1768611885777
+          modified: 1768611885777
+          isPrivate: false
+          description: Test with address that doesn't exist
+          sortKey: -1768611885777
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "address": "XYZ Nonexistent Street, Fake City, Tunisia"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_aadcf75d1ba31931ee29d676e697a1349ff53623
+    created: 1768611893741
+    modified: 1768611893741
+environments:
+  name: Base Environment
+  meta:
+    id: env_83d4ee57f97749b9b5df4c8eef01fbea
+    created: 1768611885740
+    modified: 1768611885740
+    isPrivate: false
+  data:
+    base_url: http://localhost:5000
