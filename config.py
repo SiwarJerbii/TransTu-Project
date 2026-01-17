@@ -36,7 +36,7 @@ class Config:
     API_DELAY = float(os.getenv('API_DELAY', 1))  # seconds
     
     # CORS
-    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:8080']
+    CORS_ORIGINS = ['*']
 
 class DevelopmentConfig(Config):
     """Development configuration"""

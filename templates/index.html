@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransTu Bus - Greater Tunis Route Finder</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Earthy Color Palette */
+            --earth-dark: #2C3E2D;
+            --earth-forest: #3D5A3D;
+            --earth-sage: #6B8E6B;
+            --earth-olive: #8FA889;
+            --earth-sand: #D4C4A8;
+            --earth-cream: #F5F1E8;
+            --earth-terracotta: #C67B5C;
+            --earth-clay: #A65D3F;
+            --earth-brown: #5D4E37;
+            
+            /* Functional Colors */
+            --bg-primary: var(--earth-cream);
+            --bg-secondary: #FFFFFF;
+            --text-primary: var(--earth-dark);
+            --text-secondary: var(--earth-brown);
+            --accent: var(--earth-terracotta);
+            --accent-hover: var(--earth-clay);
+            --success: var(--earth-forest);
+            --border: rgba(93, 78, 55, 0.15);
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(44, 62, 45, 0.08);
+            --shadow-md: 0 4px 20px rgba(44, 62, 45, 0.12);
+            --shadow-lg: 0 8px 40px rgba(44, 62, 45, 0.16);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--earth-dark);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .brand-name {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.75rem;
+            color: var(--earth-cream);
+            letter-spacing: 0.5px;
+        }
+        
+        .brand-name span {
+            color: var(--earth-terracotta);
+        }
+        
+        .brand-tagline {
+            font-size: 0.75rem;
+            color: var(--earth-olive);
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+        }
+        
+        /* Left Panel */
+        .left-panel {
+            width: 420px;
+            min-width: 380px;
+            background: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            position: relative;
+            z-index: 100;
+        }
+        
+        .search-section {
+            padding: 1.5rem;
+            background: linear-gradient(180deg, var(--earth-cream) 0%, var(--bg-secondary) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .search-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .input-dot.start {
+            background: var(--earth-forest);
+        }
+        
+        .input-dot.end {
+            background: var(--earth-terracotta);
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .input-field {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--earth-sage);
+            box-shadow: 0 0 0 4px rgba(107, 142, 107, 0.15);
+        }
+        
+        .input-field::placeholder {
+            color: var(--earth-olive);
+        }
+        
+        .btn-location {
+            padding: 0 1rem;
+            background: var(--earth-cream);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-location:hover {
+            background: var(--earth-sand);
+            border-color: var(--earth-sage);
+        }
+        
+        .btn-location svg {
+            width: 20px;
+            height: 20px;
+            color: var(--earth-forest);
+        }
+        
+        .btn-search {
+            width: 100%;
+            padding: 1rem;
+            background: var(--earth-terracotta);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-search:hover {
+            background: var(--earth-clay);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-search:disabled {
+            background: var(--earth-olive);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-search svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Sort Options */
+        .sort-section {
+            padding: 0.75rem 1.5rem;
+            background: var(--earth-cream);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .sort-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .sort-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sort-btn:hover {
+            border-color: var(--earth-sage);
+        }
+        
+        .sort-btn.active {
+            background: var(--earth-forest);
+            color: white;
+            border-color: var(--earth-forest);
+        }
+        
+        /* Results Section */
+        .results-section {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+        
+        .results-count {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .results-count strong {
+            color: var(--earth-forest);
+            font-weight: 600;
+        }
+        
+        /* Route Card */
+        .route-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .route-card:hover {
+            border-color: var(--earth-sage);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        
+        .route-card.selected {
+            border-color: var(--earth-terracotta);
+            box-shadow: 0 0 0 4px rgba(198, 123, 92, 0.15);
+        }
+        
+        .route-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .route-buses {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .bus-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--earth-forest);
+            color: white;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .bus-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .transfer-arrow {
+            color: var(--earth-olive);
+            font-size: 1.25rem;
+        }
+        
+        .route-type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .route-type.direct {
+            background: rgba(61, 90, 61, 0.1);
+            color: var(--earth-forest);
+        }
+        
+        .route-type.transfer {
+            background: rgba(198, 123, 92, 0.1);
+            color: var(--earth-terracotta);
+        }
+        
+        .route-stats {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.75rem 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Route Steps */
+        .route-steps {
+            display: none;
+        }
+        
+        .route-card.expanded .route-steps {
+            display: block;
+        }
+        
+        .step {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 32px;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-icon.walk {
+            background: var(--earth-sand);
+            color: var(--earth-brown);
+        }
+        
+        .step-icon.bus {
+            background: var(--earth-forest);
+            color: white;
+        }
+        
+        .step-icon svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .step-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .expand-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--earth-sage);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            width: 100%;
+            transition: color 0.2s ease;
+        }
+        
+        .expand-btn:hover {
+            color: var(--earth-forest);
+        }
+        
+        .expand-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+        }
+        
+        .route-card.expanded .expand-btn svg {
+            transform: rotate(180deg);
+        }
+        
+        /* Loading State */
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            text-align: center;
+        }
+        
+        .loading.visible {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--earth-terracotta);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            text-align: center;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            color: var(--earth-olive);
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-state p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Error Message */
+        .error-message {
+            display: none;
+            padding: 1rem;
+            background: rgba(198, 123, 92, 0.1);
+            border: 1px solid var(--earth-terracotta);
+            border-radius: 12px;
+            margin: 1rem;
+            color: var(--earth-clay);
+            font-size: 0.9rem;
+        }
+        
+        .error-message.visible {
+            display: block;
+        }
+        
+        /* Right Panel - Map */
+        .right-panel {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Custom Map Markers */
+        .custom-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker-start {
+            width: 32px;
+            height: 32px;
+            background: var(--earth-forest);
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .marker-end {
+            width: 32px;
+            height: 32px;
+            background: var(--earth-terracotta);
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .marker-stop {
+            width: 16px;
+            height: 16px;
+            background: var(--earth-sage);
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .marker-transfer {
+            width: 24px;
+            height: 24px;
+            background: var(--earth-sand);
+            border: 3px solid var(--earth-terracotta);
+            border-radius: 50%;
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Map Legend */
+        .map-legend {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 500;
+            font-size: 0.8rem;
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .legend-dot.start { background: var(--earth-forest); }
+        .legend-dot.end { background: var(--earth-terracotta); }
+        .legend-dot.stop { background: var(--earth-sage); }
+        .legend-dot.transfer { 
+            background: var(--earth-sand); 
+            border: 2px solid var(--earth-terracotta);
+        }
+        
+        .legend-line {
+            width: 24px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        .legend-line.route { background: var(--earth-forest); }
+        .legend-line.walk { 
+            background: repeating-linear-gradient(
+                90deg,
+                var(--earth-terracotta) 0px,
+                var(--earth-terracotta) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            .main-container {
+                flex-direction: column-reverse;
+            }
+            
+            .left-panel {
+                width: 100%;
+                min-width: auto;
+                height: 50vh;
+                border-right: none;
+                border-top: 1px solid var(--border);
+            }
+            
+            .right-panel {
+                height: 50vh;
+            }
+            
+            .map-legend {
+                bottom: 12px;
+                right: 12px;
+                padding: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .brand-name {
+                font-size: 1.4rem;
+            }
+            
+            .brand-tagline {
+                display: none;
+            }
+            
+            .search-section {
+                padding: 1rem;
+            }
+            
+            .sort-section {
+                padding: 0.5rem 1rem;
+                flex-wrap: wrap;
+            }
+            
+            .route-stats {
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+            
+            .left-panel {
+                height: 60vh;
+            }
+            
+            .right-panel {
+                height: 40vh;
+            }
+        }
+        
+        /* Leaflet Popup Customization */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .leaflet-popup-content {
+            margin: 12px 16px;
+        }
+        
+        .popup-title {
+            font-weight: 600;
+            color: var(--earth-dark);
+            margin-bottom: 4px;
+        }
+        
+        .popup-detail {
+            font-size: 0.85rem;
+            color: var(--earth-brown);
+        }
+        
+        /* Scrollbar Styling */
+        .results-section::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .results-section::-webkit-scrollbar-track {
+            background: var(--earth-cream);
+        }
+        
+        .results-section::-webkit-scrollbar-thumb {
+            background: var(--earth-olive);
+            border-radius: 4px;
+        }
+        
+        .results-section::-webkit-scrollbar-thumb:hover {
+            background: var(--earth-sage);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="brand">
+            <div>
+                <div class="brand-name">Trans<span>Tu</span> Bus</div>
+            </div>
+        </div>
+        <div class="brand-tagline">Greater Tunis Transit</div>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Panel -->
+        <aside class="left-panel">
+            <!-- Search Section -->
+            <div class="search-section">
+                <h2 class="search-title">Find Your Route</h2>
+                
+                <div class="input-group">
+                    <label class="input-label">
+                        <span class="input-dot start"></span>
+                        Starting Point
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="start-input" class="input-field" placeholder="Enter address or click map">
+                        <button class="btn-location" id="btn-gps-start" title="Use my location">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">
+                        <span class="input-dot end"></span>
+                        Destination
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="end-input" class="input-field" placeholder="Enter address or click map">
+                        <button class="btn-location" id="btn-gps-end" title="Use my location">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn-search" id="btn-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14m-7-7 7 7-7 7"></path>
+                    </svg>
+                    Search Routes
+                </button>
+            </div>
+            
+            <!-- Sort Section -->
+            <div class="sort-section">
+                <span class="sort-label">Sort by:</span>
+                <button class="sort-btn active" data-sort="time">Fastest</button>
+                <button class="sort-btn" data-sort="transfers">Fewer Transfers</button>
+                <button class="sort-btn" data-sort="walking">Less Walking</button>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="error-message"></div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="results-section">
+                <!-- Loading State -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Finding the best routes...</p>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                    </svg>
+                    <h3>Plan Your Journey</h3>
+                    <p>Enter your start and destination to find available bus routes</p>
+                </div>
+                
+                <!-- Results Container -->
+                <div id="results-container"></div>
+            </div>
+        </aside>
+        
+        <!-- Right Panel - Map -->
+        <div class="right-panel">
+            <div id="map"></div>
+            <div class="map-legend">
+                <div class="legend-title">Map Legend</div>
+                <div class="legend-item">
+                    <span class="legend-dot start"></span>
+                    <span>Start Point</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot end"></span>
+                    <span>Destination</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot stop"></span>
+                    <span>Bus Stop</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot transfer"></span>
+                    <span>Transfer Point</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line route"></span>
+                    <span>Bus Route</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-line walk"></span>
+                    <span>Walking</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // ============================================================
+        // TransTu Bus - Route Finder Application
+        // ============================================================
+        
+        const API_BASE = '';  // Same origin
+        
+        // State
+        let map;
+        let startCoords = null;
+        let endCoords = null;
+        let startMarker = null;
+        let endMarker = null;
+        let routeLayers = [];
+        let allRoutes = [];
+        let selectedRouteIndex = -1;
+        let clickMode = null; // 'start' or 'end'
+        
+        // Greater Tunis bounds
+        const TUNIS_CENTER = [36.8065, 10.1815];
+        const TUNIS_BOUNDS = [[36.4, 9.5], [37.1, 10.6]];
+        
+        // ============================================================
+        // Initialize Map
+        // ============================================================
+        
+        function initMap() {
+            map = L.map('map', {
+                center: TUNIS_CENTER,
+                zoom: 11,
+                minZoom: 9,
+                maxZoom: 18,
+                maxBounds: TUNIS_BOUNDS,
+                maxBoundsViscosity: 1.0
+            });
+            
+            // Add OpenStreetMap tiles with earthy style
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Click handler for setting start/end
+            map.on('click', handleMapClick);
+            
+            // Add instructions popup
+            showMapInstructions();
+        }
+        
+        function showMapInstructions() {
+            const popup = L.popup()
+                .setLatLng(TUNIS_CENTER)
+                .setContent(`
+                    <div class="popup-title">Welcome to TransTu</div>
+                    <div class="popup-detail">Click on the map to set your start and end points, or use the search fields.</div>
+                `)
+                .openOn(map);
+            
+            setTimeout(() => map.closePopup(), 4000);
+        }
+        
+        // ============================================================
+        // Custom Markers
+        // ============================================================
+        
+        function createMarkerIcon(type) {
+            const colors = {
+                start: '#3D5A3D',
+                end: '#C67B5C',
+                stop: '#6B8E6B',
+                transfer: '#D4C4A8'
+            };
+            
+            const sizes = {
+                start: [32, 32],
+                end: [32, 32],
+                stop: [14, 14],
+                transfer: [24, 24]
+            };
+            
+            const size = sizes[type];
+            const color = colors[type];
+            const borderColor = type === 'transfer' ? '#C67B5C' : '#FFFFFF';
+            const borderWidth = type === 'stop' ? 2 : 3;
+            
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="
+                    width: ${size[0]}px;
+                    height: ${size[1]}px;
+                    background: ${color};
+                    border: ${borderWidth}px solid ${borderColor};
+                    border-radius: 50%;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                "></div>`,
+                iconSize: size,
+                iconAnchor: [size[0]/2, size[1]/2]
+            });
+        }
+        
+        // ============================================================
+        // Map Click Handler
+        // ============================================================
+        
+        function handleMapClick(e) {
+            const { lat, lng } = e.latlng;
+            
+            if (!startCoords) {
+                setStartLocation(lat, lng);
+                reverseGeocode(lat, lng, 'start');
+            } else if (!endCoords) {
+                setEndLocation(lat, lng);
+                reverseGeocode(lat, lng, 'end');
+            } else {
+                // Both set, update the one that was clicked more recently based on proximity
+                const distToStart = map.distance(e.latlng, L.latLng(startCoords));
+                const distToEnd = map.distance(e.latlng, L.latLng(endCoords));
+                
+                if (distToStart < distToEnd) {
+                    setStartLocation(lat, lng);
+                    reverseGeocode(lat, lng, 'start');
+                } else {
+                    setEndLocation(lat, lng);
+                    reverseGeocode(lat, lng, 'end');
+                }
+            }
+        }
+        
+        function setStartLocation(lat, lng) {
+            startCoords = [lat, lng];
+            
+            if (startMarker) {
+                map.removeLayer(startMarker);
+            }
+            
+            startMarker = L.marker([lat, lng], {
+                icon: createMarkerIcon('start'),
+                draggable: true
+            }).addTo(map);
+            
+            startMarker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                startCoords = [pos.lat, pos.lng];
+                reverseGeocode(pos.lat, pos.lng, 'start');
+            });
+            
+            startMarker.bindPopup('<div class="popup-title">Start Point</div>');
+        }
+        
+        function setEndLocation(lat, lng) {
+            endCoords = [lat, lng];
+            
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+            
+            endMarker = L.marker([lat, lng], {
+                icon: createMarkerIcon('end'),
+                draggable: true
+            }).addTo(map);
+            
+            endMarker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                endCoords = [pos.lat, pos.lng];
+                reverseGeocode(pos.lat, pos.lng, 'end');
+            });
+            
+            endMarker.bindPopup('<div class="popup-title">Destination</div>');
+        }
+        
+        // ============================================================
+        // Geocoding
+        // ============================================================
+        
+        async function geocodeAddress(address) {
+            try {
+                const response = await fetch(`${API_BASE}/api/geocode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    return {
+                        lat: data.coordinates.latitude,
+                        lng: data.coordinates.longitude,
+                        display: data.display_name
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Geocoding error:', error);
+                return null;
+            }
+        }
+        
+        async function reverseGeocode(lat, lng, type) {
+            // Use Nominatim for reverse geocoding
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`,
+                    { headers: { 'User-Agent': 'TransTuBusApp/1.0' } }
+                );
+                const data = await response.json();
+                
+                if (data.display_name) {
+                    const shortName = data.display_name.split(',').slice(0, 3).join(',');
+                    document.getElementById(`${type}-input`).value = shortName;
+                }
+            } catch (error) {
+                console.error('Reverse geocoding error:', error);
+            }
+        }
+        
+        // ============================================================
+        // GPS Location
+        // ============================================================
+        
+        function getCurrentLocation(type) {
+            if (!navigator.geolocation) {
+                showError('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    if (type === 'start') {
+                        setStartLocation(latitude, longitude);
+                        reverseGeocode(latitude, longitude, 'start');
+                    } else {
+                        setEndLocation(latitude, longitude);
+                        reverseGeocode(latitude, longitude, 'end');
+                    }
+                    
+                    map.setView([latitude, longitude], 15);
+                },
+                (error) => {
+                    showError('Unable to get your location. Please enter an address manually.');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+        
+        // ============================================================
+        // Route Search
+        // ============================================================
+        
+        async function searchRoutes() {
+            // Get coordinates from inputs if not set by map
+            const startInput = document.getElementById('start-input').value.trim();
+            const endInput = document.getElementById('end-input').value.trim();
+            
+            // Validate inputs
+            if (!startInput && !startCoords) {
+                showError('Please enter a starting point or click on the map');
+                return;
+            }
+            
+            if (!endInput && !endCoords) {
+                showError('Please enter a destination or click on the map');
+                return;
+            }
+            
+            // Show loading
+            showLoading(true);
+            hideError();
+            clearRoutes();
+            
+            try {
+                // Geocode if needed
+                if (startInput && !startCoords) {
+                    const result = await geocodeAddress(startInput);
+                    if (result) {
+                        setStartLocation(result.lat, result.lng);
+                    } else {
+                        showError('Could not find the starting address');
+                        showLoading(false);
+                        return;
+                    }
+                }
+                
+                if (endInput && !endCoords) {
+                    const result = await geocodeAddress(endInput);
+                    if (result) {
+                        setEndLocation(result.lat, result.lng);
+                    } else {
+                        showError('Could not find the destination address');
+                        showLoading(false);
+                        return;
+                    }
+                }
+                
+                // Fetch both direct and transfer routes
+                const [directRoutes, transferRoutes] = await Promise.all([
+                    fetchDirectRoutes(),
+                    fetchTransferRoutes()
+                ]);
+                
+                // Combine and process routes
+                allRoutes = [
+                    ...directRoutes.map(r => ({ ...r, routeType: 'direct', transfers: 0 })),
+                    ...transferRoutes.map(r => ({ ...r, routeType: 'transfer', transfers: 1 }))
+                ];
+                
+                if (allRoutes.length === 0) {
+                    showEmptyResults();
+                } else {
+                    sortAndDisplayRoutes('time');
+                    fitMapToRoute();
+                }
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showError('An error occurred while searching for routes. Please try again.');
+            }
+            
+            showLoading(false);
+        }
+        
+        async function fetchDirectRoutes() {
+            try {
+                const response = await fetch(`${API_BASE}/api/routes/direct`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        start: { latitude: startCoords[0], longitude: startCoords[1] },
+                        end: { latitude: endCoords[0], longitude: endCoords[1] }
+                    })
+                });
+                
+                const data = await response.json();
+                return data.success ? (data.valid_routes_only || []) : [];
+            } catch (error) {
+                console.error('Direct routes error:', error);
+                return [];
+            }
+        }
+        
+        async function fetchTransferRoutes() {
+            try {
+                const response = await fetch(`${API_BASE}/api/routes/transfer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        start: { latitude: startCoords[0], longitude: startCoords[1] },
+                        end: { latitude: endCoords[0], longitude: endCoords[1] },
+                        max_results: 10
+                    })
+                });
+                
+                const data = await response.json();
+                return data.success ? (data.routes || []) : [];
+            } catch (error) {
+                console.error('Transfer routes error:', error);
+                return [];
+            }
+        }
+        
+        // ============================================================
+        // Display Routes
+        // ============================================================
+        
+        function sortAndDisplayRoutes(sortBy) {
+            // Update sort buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === sortBy);
+            });
+            
+            // Sort routes
+            const sorted = [...allRoutes].sort((a, b) => {
+                switch(sortBy) {
+                    case 'time':
+                        return getTotalTime(a) - getTotalTime(b);
+                    case 'transfers':
+                        return a.transfers - b.transfers || getTotalTime(a) - getTotalTime(b);
+                    case 'walking':
+                        return getTotalWalking(a) - getTotalWalking(b);
+                    default:
+                        return 0;
+                }
+            });
+            
+            displayRoutes(sorted);
+        }
+        
+        function getTotalTime(route) {
+            if (route.routeType === 'direct') {
+                return route.total_time_minutes || 0;
+            }
+            return route.total_time_minutes || 0;
+        }
+        
+        function getTotalWalking(route) {
+            if (route.routeType === 'direct') {
+                return (route.walking?.to_start_meters || 0) + (route.walking?.from_end_meters || 0);
+            }
+            return route.summary?.total_walking_meters || 0;
+        }
+        
+        function displayRoutes(routes) {
+            const container = document.getElementById('results-container');
+            document.getElementById('empty-state').style.display = 'none';
+            
+            container.innerHTML = `
+                <div class="results-header">
+                    <span class="results-count"><strong>${routes.length}</strong> routes found</span>
+                </div>
+                ${routes.map((route, index) => createRouteCard(route, index)).join('')}
+            `;
+            
+            // Add click handlers
+            container.querySelectorAll('.route-card').forEach((card, index) => {
+                card.addEventListener('click', () => selectRoute(index));
+            });
+            
+            container.querySelectorAll('.expand-btn').forEach((btn, index) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleRouteExpand(index);
+                });
+            });
+        }
+        
+        function createRouteCard(route, index) {
+            const isTransfer = route.routeType === 'transfer';
+            const time = getTotalTime(route);
+            const walking = getTotalWalking(route);
+            const stops = isTransfer ? route.summary?.total_bus_stops : route.validation?.stops_count;
+            
+            // Get bus info
+            let busesHtml = '';
+            if (isTransfer) {
+                const buses = route.summary?.buses_used || [];
+                busesHtml = buses.map((bus, i) => `
+                    <span class="bus-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 6v6m8-6v6M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                            <circle cx="7" cy="18" r="2"></circle>
+                            <circle cx="17" cy="18" r="2"></circle>
+                        </svg>
+                        ${bus}
+                    </span>
+                    ${i < buses.length - 1 ? '<span class="transfer-arrow">→</span>' : ''}
+                `).join('');
+            } else {
+                busesHtml = `
+                    <span class="bus-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 6v6m8-6v6M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                            <circle cx="7" cy="18" r="2"></circle>
+                            <circle cx="17" cy="18" r="2"></circle>
+                        </svg>
+                        ${route.bus_line}
+                    </span>
+                `;
+            }
+            
+            // Create steps HTML
+            const stepsHtml = createStepsHtml(route);
+            
+            return `
+                <div class="route-card" data-index="${index}">
+                    <div class="route-header">
+                        <div class="route-buses">${busesHtml}</div>
+                        <span class="route-type ${route.routeType}">${isTransfer ? '1 Transfer' : 'Direct'}</span>
+                    </div>
+                    
+                    <div class="route-stats">
+                        <div class="stat">
+                            <span class="stat-value">${time} min</span>
+                            <span class="stat-label">Total Time</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${Math.round(walking)} m</span>
+                            <span class="stat-label">Walking</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${stops || '-'}</span>
+                            <span class="stat-label">Bus Stops</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">${route.transfers}</span>
+                            <span class="stat-label">Transfers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="route-steps">
+                        ${stepsHtml}
+                    </div>
+                    
+                    <button class="expand-btn">
+                        <span>View Details</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }
+        
+        function createStepsHtml(route) {
+            if (route.routeType === 'transfer' && route.segments) {
+                return route.segments.map(seg => {
+                    if (seg.type === 'walk') {
+                        return `
+                            <div class="step">
+                                <div class="step-icon walk">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M13 4v4l3 3m-6 0l-3 3v6m8-6l3 3v4M9 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+                                    </svg>
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-title">${seg.instruction}</div>
+                                    <div class="step-detail">${seg.distance_meters}m · ${seg.duration_minutes} min</div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="step">
+                                <div class="step-icon bus">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M8 6v6m8-6v6M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-title">Bus ${seg.bus_line} (${seg.direction})</div>
+                                    <div class="step-detail">
+                                        ${seg.board_at?.name} → ${seg.alight_at?.name}<br>
+                                        ${seg.stops_count} stops · ${seg.duration_minutes} min
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            } else {
+                // Direct route
+                return `
+                    <div class="step">
+                        <div class="step-icon walk">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 4v4l3 3m-6 0l-3 3v6m8-6l3 3v4M9 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+                            </svg>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Walk to ${route.start_stop?.name}</div>
+                            <div class="step-detail">${route.walking?.to_start_meters}m · ${route.walking?.to_start_minutes} min</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-icon bus">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 6v6m8-6v6M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Bus ${route.bus_line} (${route.direction})</div>
+                            <div class="step-detail">
+                                ${route.start_stop?.name} → ${route.end_stop?.name}<br>
+                                ${route.validation?.stops_count} stops · ${route.validation?.estimated_minutes} min
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-icon walk">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 4v4l3 3m-6 0l-3 3v6m8-6l3 3v4M9 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+                            </svg>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Walk to destination</div>
+                            <div class="step-detail">${route.walking?.from_end_meters}m · ${route.walking?.from_end_minutes} min</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function toggleRouteExpand(index) {
+            const card = document.querySelector(`.route-card[data-index="${index}"]`);
+            card.classList.toggle('expanded');
+            
+            const btn = card.querySelector('.expand-btn span');
+            btn.textContent = card.classList.contains('expanded') ? 'Hide Details' : 'View Details';
+        }
+        
+        function selectRoute(index) {
+            // Update selection state
+            document.querySelectorAll('.route-card').forEach((card, i) => {
+                card.classList.toggle('selected', i === index);
+            });
+            
+            selectedRouteIndex = index;
+            displayRouteOnMap(allRoutes[index]);
+        }
+        
+        // ============================================================
+        // Map Route Display
+        // ============================================================
+        
+        function clearRoutes() {
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+        }
+        
+        function displayRouteOnMap(route) {
+            clearRoutes();
+            
+            if (route.routeType === 'transfer' && route.segments) {
+                route.segments.forEach((seg, index) => {
+                    if (seg.type === 'walk') {
+                        // Walking path (dashed line)
+                        const startCoord = seg.details?.coordinates ? 
+                            [seg.details.coordinates.latitude, seg.details.coordinates.longitude] :
+                            (index === 0 ? startCoords : null);
+                        
+                        if (startCoord && seg.details?.coordinates) {
+                            const walkLine = L.polyline([
+                                startCoord,
+                                [seg.details.coordinates.latitude, seg.details.coordinates.longitude]
+                            ], {
+                                color: '#C67B5C',
+                                weight: 4,
+                                dashArray: '8, 8',
+                                opacity: 0.8
+                            }).addTo(map);
+                            routeLayers.push(walkLine);
+                        }
+                    } else {
+                        // Bus route (solid line)
+                        if (seg.board_at?.coordinates && seg.alight_at?.coordinates) {
+                            const busLine = L.polyline([
+                                [seg.board_at.coordinates.latitude, seg.board_at.coordinates.longitude],
+                                [seg.alight_at.coordinates.latitude, seg.alight_at.coordinates.longitude]
+                            ], {
+                                color: '#3D5A3D',
+                                weight: 5,
+                                opacity: 0.9
+                            }).addTo(map);
+                            routeLayers.push(busLine);
+                            
+                            // Add bus stop markers
+                            const boardMarker = L.marker(
+                                [seg.board_at.coordinates.latitude, seg.board_at.coordinates.longitude],
+                                { icon: createMarkerIcon('stop') }
+                            ).addTo(map);
+                            boardMarker.bindPopup(`
+                                <div class="popup-title">${seg.board_at.name}</div>
+                                <div class="popup-detail">Board Bus ${seg.bus_line}</div>
+                            `);
+                            routeLayers.push(boardMarker);
+                            
+                            const alightMarker = L.marker(
+                                [seg.alight_at.coordinates.latitude, seg.alight_at.coordinates.longitude],
+                                { icon: createMarkerIcon(seg.details?.is_transfer ? 'transfer' : 'stop') }
+                            ).addTo(map);
+                            alightMarker.bindPopup(`
+                                <div class="popup-title">${seg.alight_at.name}</div>
+                                <div class="popup-detail">Exit Bus ${seg.bus_line}</div>
+                            `);
+                            routeLayers.push(alightMarker);
+                        }
+                    }
+                });
+            } else {
+                // Direct route
+                if (route.start_stop?.coordinates && route.end_stop?.coordinates) {
+                    // Walking to start
+                    const walkToStart = L.polyline([
+                        startCoords,
+                        [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude]
+                    ], {
+                        color: '#C67B5C',
+                        weight: 4,
+                        dashArray: '8, 8',
+                        opacity: 0.8
+                    }).addTo(map);
+                    routeLayers.push(walkToStart);
+                    
+                    // Bus route
+                    const busLine = L.polyline([
+                        [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
+                        [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude]
+                    ], {
+                        color: '#3D5A3D',
+                        weight: 5,
+                        opacity: 0.9
+                    }).addTo(map);
+                    routeLayers.push(busLine);
+                    
+                    // Walking to end
+                    const walkToEnd = L.polyline([
+                        [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude],
+                        endCoords
+                    ], {
+                        color: '#C67B5C',
+                        weight: 4,
+                        dashArray: '8, 8',
+                        opacity: 0.8
+                    }).addTo(map);
+                    routeLayers.push(walkToEnd);
+                    
+                    // Stop markers
+                    const startStopMarker = L.marker(
+                        [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
+                        { icon: createMarkerIcon('stop') }
+                    ).addTo(map);
+                    startStopMarker.bindPopup(`
+                        <div class="popup-title">${route.start_stop.name}</div>
+                        <div class="popup-detail">Board Bus ${route.bus_line}</div>
+                    `);
+                    routeLayers.push(startStopMarker);
+                    
+                    const endStopMarker = L.marker(
+                        [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude],
+                        { icon: createMarkerIcon('stop') }
+                    ).addTo(map);
+                    endStopMarker.bindPopup(`
+                        <div class="popup-title">${route.end_stop.name}</div>
+                        <div class="popup-detail">Exit Bus ${route.bus_line}</div>
+                    `);
+                    routeLayers.push(endStopMarker);
+                }
+            }
+            
+            fitMapToRoute();
+        }
+        
+        function fitMapToRoute() {
+            const bounds = L.latLngBounds([startCoords, endCoords]);
+            routeLayers.forEach(layer => {
+                if (layer.getLatLng) {
+                    bounds.extend(layer.getLatLng());
+                } else if (layer.getBounds) {
+                    bounds.extend(layer.getBounds());
+                }
+            });
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+        
+        // ============================================================
+        // UI Helpers
+        // ============================================================
+        
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('visible', show);
+            document.getElementById('results-container').style.display = show ? 'none' : 'block';
+            document.getElementById('empty-state').style.display = 'none';
+        }
+        
+        function showEmptyResults() {
+            document.getElementById('empty-state').innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9.172 16.172a4 4 0 0 1 5.656 0M9 10h.01M15 10h.01M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+                </svg>
+                <h3>No Routes Found</h3>
+                <p>We couldn't find any bus routes between these locations. Try different addresses or check if both points are within the Greater Tunis area.</p>
+            `;
+            document.getElementById('empty-state').style.display = 'flex';
+            document.getElementById('results-container').innerHTML = '';
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+        
+        function hideError() {
+            document.getElementById('error-message').classList.remove('visible');
+        }
+        
+        // ============================================================
+        // Event Listeners
+        // ============================================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            
+            // Search button
+            document.getElementById('btn-search').addEventListener('click', searchRoutes);
+            
+            // GPS buttons
+            document.getElementById('btn-gps-start').addEventListener('click', () => getCurrentLocation('start'));
+            document.getElementById('btn-gps-end').addEventListener('click', () => getCurrentLocation('end'));
+            
+            // Sort buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (allRoutes.length > 0) {
+                        sortAndDisplayRoutes(btn.dataset.sort);
+                    }
+                });
+            });
+            
+            // Enter key on inputs
+            document.getElementById('start-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('end-input').focus();
+                }
+            });
+            
+            document.getElementById('end-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchRoutes();
+                }
+            });
+            
+            // Clear coordinates when input is manually changed
+            document.getElementById('start-input').addEventListener('input', () => {
+                startCoords = null;
+                if (startMarker) {
+                    map.removeLayer(startMarker);
+                    startMarker = null;
+                }
+            });
+            
+            document.getElementById('end-input').addEventListener('input', () => {
+                endCoords = null;
+                if (endMarker) {
+                    map.removeLayer(endMarker);
+                    endMarker = null;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

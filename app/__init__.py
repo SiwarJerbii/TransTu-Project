@@ -14,24 +14,36 @@ def create_app(config_name=None):
     Creates and configures the Flask app
     """
     
-    # Use environment variable or default to development
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
     
-    # Create Flask app
-    app = Flask(__name__)
-    
-    # Load configuration
+    # Get the parent directory (project root) for template path
+    template_dir = os.path.join(os.path.dirname(__file__), '..', 'templates')
+    app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(config[config_name])
     
     # Enable CORS
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    CORS(app, 
+         resources={r"/api/*": {"origins": "*"}},
+         supports_credentials=False,
+         methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+         allow_headers=["Content-Type", "Authorization"],
+         expose_headers=["Content-Type"],
+         max_age=3600)
     
-    # Register blueprints
-    from app.routes import health, geocoding, routing
+    # Register API blueprints
+    from app.routes import health, geocoding, routing, favicon
     
     app.register_blueprint(health.bp)
-    app.register_blueprint(geocoding.bp, url_prefix='/api')  # NEW
+    app.register_blueprint(geocoding.bp, url_prefix='/api')
     app.register_blueprint(routing.bp, url_prefix='/api')
+    app.register_blueprint(favicon.bp)
+    
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
     
     return app

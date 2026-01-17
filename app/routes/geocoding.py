@@ -6,7 +6,7 @@ from app.services.geocoding_service import geocoding_service
 
 bp = Blueprint('geocoding', __name__)
 
-@bp.route('/geocode', methods=['POST'])
+@bp.route('/geocode', methods=['POST', 'OPTIONS'])
 def geocode_address():
     """
     Convert address to coordinates
@@ -86,7 +86,7 @@ def geocode_address():
         }), 500
 
 
-@bp.route('/geocode/batch', methods=['POST'])
+@bp.route('/geocode/batch', methods=['POST', 'OPTIONS'])
 def geocode_multiple_addresses():
     """
     Geocode multiple addresses at once

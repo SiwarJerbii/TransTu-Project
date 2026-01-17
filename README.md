@@ -7,15 +7,11 @@ TransTu Route Finder - A smart public transportation routing application for Gre
 
 ## Features
 
-- ✅ Direct route finding between two locations
-- ✅ Address to coordinates geocoding (Nominatim)
-- ✅ Robust error handling for null/None values
-- ✅ Input validation for coordinate ranges
-- ✅ Multi-modal route planning (Bus)
-- ✅ Real-time distance calculations
-- ✅ Interactive map visualization
-- ✅ Route ranking by travel time
-- ✅ User-friendly messages when routes unavailable
+- Multimodal route planning (Bus)
+- GPS-based location detection
+- Interactive map visualization
+- Optimized route ranking by travel time
+- Real-time distance calculations
 
 ## 🛠️ Tech Stack
 - **Backend:** Flask (Python)
@@ -115,7 +111,7 @@ Convert address strings to geographic coordinates (latitude, longitude).
 }
 ```
 
-### Direct Routes
+### Compute Routes
 ```http
 POST /api/routes/direct
 Content-Type: application/json
@@ -171,6 +167,9 @@ TransTu-Project/
 │   ├── models/
 │   ├── utils/
 │   │   └── data_loader.py     # Bus routes data loader
+│   ├── templates/             # HTML templates
+│   │   └── index.html
+│   ├── static/                # Static files (CSS, JS, images)
 │   └── __init__.py            # App factory
 ├── data/
 │   └── bus_routes.json        # Transit data (406 bus routes)
@@ -181,6 +180,7 @@ TransTu-Project/
 ├── requirements.txt
 ├── Dockerfile
 └── docker-compose.yml
+
 ```
 
 ## 📈 Data Pipeline
