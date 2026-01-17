@@ -142,6 +142,20 @@ class RoutingService:
                         walking_time_end
                     )
                 
+ # Get intermediate stops between start and end
+                intermediate_stops = []
+                if validation['valid']:
+                    for stop in route['stops']:
+                        if start_stop['stop_number'] <= stop['stop_number'] <= end_stop['stop_number']:
+                            intermediate_stops.append({
+                                'name': stop['stop_name'],
+                                'number': stop['stop_number'],
+                                'coordinates': {
+                                    'latitude': stop['latitude'],
+                                    'longitude': stop['longitude']
+                                }
+                            })
+                
                 results.append({
                     'bus_line': route['bus_name'],
                     'direction': route['direction'],
@@ -163,6 +177,7 @@ class RoutingService:
                             'longitude': end_stop['longitude']
                         }
                     },
+                    'intermediate_stops': intermediate_stops,
                     'walking': {
                         'to_start_meters': walking_to_start,
                         'to_start_minutes': walking_time_start,

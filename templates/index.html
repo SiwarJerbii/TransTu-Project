@@ -636,7 +636,14 @@
             border-radius: 50%;
             box-shadow: var(--shadow-sm);
         }
-        
+         .marker-intermediate {
+            width: 10px;
+            height: 10px;
+            background: #8FA889;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
         .marker-transfer {
             width: 24px;
             height: 24px;
@@ -1001,16 +1008,24 @@
                 start: '#3D5A3D',
                 end: '#C67B5C',
                 stop: '#6B8E6B',
-                transfer: '#D4C4A8'
+                transfer: '#D4C4A8',
+                intermediate: '#8FA889' 
             };
             
             const sizes = {
                 start: [32, 32],
                 end: [32, 32],
                 stop: [14, 14],
-                transfer: [24, 24]
+                transfer: [24, 24],
+                intermediate: [10, 10]
             };
-            
+            const classes = {
+                'start': 'marker-start',
+                'end': 'marker-end',
+                'stop': 'marker-stop',
+                'transfer': 'marker-transfer',
+                'intermediate': 'marker-intermediate'  // ADD THIS LINE
+            };
             const size = sizes[type];
             const color = colors[type];
             const borderColor = type === 'transfer' ? '#C67B5C' : '#FFFFFF';
@@ -1240,7 +1255,7 @@
                 ];
                 
                 if (allRoutes.length === 0) {
-                    showEmptyResults();
+                    showEmptyResults("No bus routes or transfers found within 500m of your locations. Try different addresses or move your start/destination points closer to bus stops.");
                 } else {
                     sortAndDisplayRoutes('time');
                     fitMapToRoute();
@@ -1541,22 +1556,39 @@
             routeLayers = [];
         }
         
-        function displayRouteOnMap(route) {
+                function displayRouteOnMap(route) {
             clearRoutes();
             
             if (route.routeType === 'transfer' && route.segments) {
+                // Transfer route with multiple segments
                 route.segments.forEach((seg, index) => {
                     if (seg.type === 'walk') {
                         // Walking path (dashed line)
-                        const startCoord = seg.details?.coordinates ? 
-                            [seg.details.coordinates.latitude, seg.details.coordinates.longitude] :
-                            (index === 0 ? startCoords : null);
+                        let walkStart, walkEnd;
                         
-                        if (startCoord && seg.details?.coordinates) {
-                            const walkLine = L.polyline([
-                                startCoord,
-                                [seg.details.coordinates.latitude, seg.details.coordinates.longitude]
-                            ], {
+                        if (index === 0) {
+                            // Walk from user start to first bus stop
+                            walkStart = startCoords;
+                            walkEnd = seg.details?.coordinates ? 
+                                [seg.details.coordinates.latitude, seg.details.coordinates.longitude] : null;
+                        } else if (index === route.segments.length - 1) {
+                            // Walk from last bus stop to destination
+                            const prevSeg = route.segments[index - 1];
+                            walkStart = prevSeg.alight_at?.coordinates ? 
+                                [prevSeg.alight_at.coordinates.latitude, prevSeg.alight_at.coordinates.longitude] : null;
+                            walkEnd = endCoords;
+                        } else {
+                            // Transfer walk between buses
+                            const prevSeg = route.segments[index - 1];
+                            const nextSeg = route.segments[index + 1];
+                            walkStart = prevSeg.alight_at?.coordinates ? 
+                                [prevSeg.alight_at.coordinates.latitude, prevSeg.alight_at.coordinates.longitude] : null;
+                            walkEnd = nextSeg.board_at?.coordinates ? 
+                                [nextSeg.board_at.coordinates.latitude, nextSeg.board_at.coordinates.longitude] : null;
+                        }
+                        
+                        if (walkStart && walkEnd) {
+                            const walkLine = L.polyline([walkStart, walkEnd], {
                                 color: '#C67B5C',
                                 weight: 4,
                                 dashArray: '8, 8',
@@ -1564,39 +1596,62 @@
                             }).addTo(map);
                             routeLayers.push(walkLine);
                         }
-                    } else {
-                        // Bus route (solid line)
-                        if (seg.board_at?.coordinates && seg.alight_at?.coordinates) {
-                            const busLine = L.polyline([
-                                [seg.board_at.coordinates.latitude, seg.board_at.coordinates.longitude],
-                                [seg.alight_at.coordinates.latitude, seg.alight_at.coordinates.longitude]
-                            ], {
+                    } else if (seg.type === 'bus') {
+                        // Bus route - draw through ALL intermediate stops
+                        if (seg.intermediate_stops && seg.intermediate_stops.length > 0) {
+                            // Build path through all stops
+                            const pathCoords = seg.intermediate_stops.map(stop => 
+                                [stop.coordinates.latitude, stop.coordinates.longitude]
+                            );
+                            
+                            // Draw the bus route line through all stops
+                            const busLine = L.polyline(pathCoords, {
                                 color: '#3D5A3D',
                                 weight: 5,
                                 opacity: 0.9
                             }).addTo(map);
                             routeLayers.push(busLine);
                             
-                            // Add bus stop markers
-                            const boardMarker = L.marker(
-                                [seg.board_at.coordinates.latitude, seg.board_at.coordinates.longitude],
-                                { icon: createMarkerIcon('stop') }
-                            ).addTo(map);
-                            boardMarker.bindPopup(`
-                                <div class="popup-title">${seg.board_at.name}</div>
-                                <div class="popup-detail">Board Bus ${seg.bus_line}</div>
-                            `);
-                            routeLayers.push(boardMarker);
-                            
-                            const alightMarker = L.marker(
-                                [seg.alight_at.coordinates.latitude, seg.alight_at.coordinates.longitude],
-                                { icon: createMarkerIcon(seg.details?.is_transfer ? 'transfer' : 'stop') }
-                            ).addTo(map);
-                            alightMarker.bindPopup(`
-                                <div class="popup-title">${seg.alight_at.name}</div>
-                                <div class="popup-detail">Exit Bus ${seg.bus_line}</div>
-                            `);
-                            routeLayers.push(alightMarker);
+                            // Add markers for each intermediate stop
+                            seg.intermediate_stops.forEach((stop, stopIndex) => {
+                                const isFirst = stopIndex === 0;
+                                const isLast = stopIndex === seg.intermediate_stops.length - 1;
+                                const isTransfer = seg.details?.is_transfer && isLast;
+                                
+                                // Determine marker type
+                                let markerType = 'intermediate';
+                                if (isFirst) markerType = 'stop';
+                                if (isLast) markerType = isTransfer ? 'transfer' : 'stop';
+                                
+                                const marker = L.marker(
+                                    [stop.coordinates.latitude, stop.coordinates.longitude],
+                                    { icon: createMarkerIcon(markerType) }
+                                ).addTo(map);
+                                
+                                let popupText = `<div class="popup-title">${stop.name}</div>`;
+                                if (isFirst) {
+                                    popupText += `<div class="popup-detail">Board Bus ${seg.bus_line}</div>`;
+                                } else if (isLast) {
+                                    popupText += `<div class="popup-detail">Exit Bus ${seg.bus_line}</div>`;
+                                } else {
+                                    popupText += `<div class="popup-detail">Stop #${stop.number}</div>`;
+                                }
+                                marker.bindPopup(popupText);
+                                routeLayers.push(marker);
+                            });
+                        } else {
+                            // Fallback: draw straight line if no intermediate stops
+                            if (seg.board_at?.coordinates && seg.alight_at?.coordinates) {
+                                const busLine = L.polyline([
+                                    [seg.board_at.coordinates.latitude, seg.board_at.coordinates.longitude],
+                                    [seg.alight_at.coordinates.latitude, seg.alight_at.coordinates.longitude]
+                                ], {
+                                    color: '#3D5A3D',
+                                    weight: 5,
+                                    opacity: 0.9
+                                }).addTo(map);
+                                routeLayers.push(busLine);
+                            }
                         }
                     }
                 });
@@ -1615,16 +1670,75 @@
                     }).addTo(map);
                     routeLayers.push(walkToStart);
                     
-                    // Bus route
-                    const busLine = L.polyline([
-                        [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
-                        [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude]
-                    ], {
-                        color: '#3D5A3D',
-                        weight: 5,
-                        opacity: 0.9
-                    }).addTo(map);
-                    routeLayers.push(busLine);
+                    // Bus route - through ALL intermediate stops
+                    if (route.intermediate_stops && route.intermediate_stops.length > 0) {
+                        // Build path through all stops
+                        const pathCoords = route.intermediate_stops.map(stop => 
+                            [stop.coordinates.latitude, stop.coordinates.longitude]
+                        );
+                        
+                        // Draw the bus route line
+                        const busLine = L.polyline(pathCoords, {
+                            color: '#3D5A3D',
+                            weight: 5,
+                            opacity: 0.9
+                        }).addTo(map);
+                        routeLayers.push(busLine);
+                        
+                        // Add markers for each stop
+                        route.intermediate_stops.forEach((stop, index) => {
+                            const isFirst = index === 0;
+                            const isLast = index === route.intermediate_stops.length - 1;
+                            
+                            const marker = L.marker(
+                                [stop.coordinates.latitude, stop.coordinates.longitude],
+                                { icon: createMarkerIcon(isFirst || isLast ? 'stop' : 'intermediate') }
+                            ).addTo(map);
+                            
+                            let popupText = `<div class="popup-title">${stop.name}</div>`;
+                            if (isFirst) {
+                                popupText += `<div class="popup-detail">Board Bus ${route.bus_line}</div>`;
+                            } else if (isLast) {
+                                popupText += `<div class="popup-detail">Exit Bus ${route.bus_line}</div>`;
+                            } else {
+                                popupText += `<div class="popup-detail">Stop #${stop.number}</div>`;
+                            }
+                            marker.bindPopup(popupText);
+                            routeLayers.push(marker);
+                        });
+                    } else {
+                        // Fallback: straight line
+                        const busLine = L.polyline([
+                            [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
+                            [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude]
+                        ], {
+                            color: '#3D5A3D',
+                            weight: 5,
+                            opacity: 0.9
+                        }).addTo(map);
+                        routeLayers.push(busLine);
+                        
+                        // Just start and end markers
+                        const startStopMarker = L.marker(
+                            [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
+                            { icon: createMarkerIcon('stop') }
+                        ).addTo(map);
+                        startStopMarker.bindPopup(`
+                            <div class="popup-title">${route.start_stop.name}</div>
+                            <div class="popup-detail">Board Bus ${route.bus_line}</div>
+                        `);
+                        routeLayers.push(startStopMarker);
+                        
+                        const endStopMarker = L.marker(
+                            [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude],
+                            { icon: createMarkerIcon('stop') }
+                        ).addTo(map);
+                        endStopMarker.bindPopup(`
+                            <div class="popup-title">${route.end_stop.name}</div>
+                            <div class="popup-detail">Exit Bus ${route.bus_line}</div>
+                        `);
+                        routeLayers.push(endStopMarker);
+                    }
                     
                     // Walking to end
                     const walkToEnd = L.polyline([
@@ -1637,27 +1751,6 @@
                         opacity: 0.8
                     }).addTo(map);
                     routeLayers.push(walkToEnd);
-                    
-                    // Stop markers
-                    const startStopMarker = L.marker(
-                        [route.start_stop.coordinates.latitude, route.start_stop.coordinates.longitude],
-                        { icon: createMarkerIcon('stop') }
-                    ).addTo(map);
-                    startStopMarker.bindPopup(`
-                        <div class="popup-title">${route.start_stop.name}</div>
-                        <div class="popup-detail">Board Bus ${route.bus_line}</div>
-                    `);
-                    routeLayers.push(startStopMarker);
-                    
-                    const endStopMarker = L.marker(
-                        [route.end_stop.coordinates.latitude, route.end_stop.coordinates.longitude],
-                        { icon: createMarkerIcon('stop') }
-                    ).addTo(map);
-                    endStopMarker.bindPopup(`
-                        <div class="popup-title">${route.end_stop.name}</div>
-                        <div class="popup-detail">Exit Bus ${route.bus_line}</div>
-                    `);
-                    routeLayers.push(endStopMarker);
                 }
             }
             
@@ -1686,17 +1779,20 @@
             document.getElementById('empty-state').style.display = 'none';
         }
         
-        function showEmptyResults() {
-            document.getElementById('empty-state').innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M9.172 16.172a4 4 0 0 1 5.656 0M9 10h.01M15 10h.01M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
-                </svg>
-                <h3>No Routes Found</h3>
-                <p>We couldn't find any bus routes between these locations. Try different addresses or check if both points are within the Greater Tunis area.</p>
-            `;
-            document.getElementById('empty-state').style.display = 'flex';
-            document.getElementById('results-container').innerHTML = '';
-        }
+        function showEmptyResults(message = null) {
+    const defaultMessage = "We couldn't find any bus routes between these locations.";
+    const displayMessage = message || defaultMessage;
+    
+    document.getElementById('empty-state').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9.172 16.172a4 4 0 0 1 5.656 0M9 10h.01M15 10h.01M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+        </svg>
+        <h3>No Routes Found</h3>
+        <p>${displayMessage}</p>
+    `;
+    document.getElementById('empty-state').style.display = 'flex';
+    document.getElementById('results-container').innerHTML = '';
+}
         
         function showError(message) {
             const errorEl = document.getElementById('error-message');

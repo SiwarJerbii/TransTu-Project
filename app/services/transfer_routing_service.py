@@ -159,11 +159,26 @@ class TransferRoutingService:
                     'stops_ahead': best_stop['stops_ahead']
                 })
         
-        # Sort by: most stops ahead first, then by walking distance
+        # Sort by: most stops ahead first, then by walking distance (OUTSIDE the loop!)
         nearby_buses.sort(key=lambda x: (-x['stops_ahead'], x['nearest_stop']['distance']))
         
         return nearby_buses
     
+    def _get_intermediate_stops(self, route: Dict, start_num: int, end_num: int) -> List[Dict]:
+        """Get all stops between start and end stop numbers (inclusive)"""
+        stops = []
+        for stop in route['stops']:
+            if start_num <= stop['stop_number'] <= end_num:
+                stops.append({
+                    'name': stop['stop_name'],
+                    'number': stop['stop_number'],
+                    'coordinates': {
+                        'latitude': stop['latitude'],
+                        'longitude': stop['longitude']
+                    }
+                })
+        return stops        
+        
     def _find_buses_near_location(self, lat: float, lon: float) -> List[Dict]:
         """
         Find all buses with stops within walking distance (legacy method).
@@ -274,7 +289,8 @@ class TransferRoutingService:
                         }
                     },
                     'stops_count': stops_on_A,
-                    'duration_minutes': bus_time_A
+                    'duration_minutes': bus_time_A,
+                    'intermediate_stops': self._get_intermediate_stops(bus_A, boarding_A['stop_number'], transfer_A['stop_number'])
                 },
                 {
                     'step': 3,
@@ -311,7 +327,8 @@ class TransferRoutingService:
                         }
                     },
                     'stops_count': stops_on_B,
-                    'duration_minutes': bus_time_B
+                    'duration_minutes': bus_time_B,
+                    'intermediate_stops': self._get_intermediate_stops(bus_B, boarding_B['stop_number'], alighting_B['stop_number'])
                 },
                 {
                     'step': 5,
