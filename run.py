@@ -16,8 +16,8 @@ app = create_app()
 if __name__ == '__main__':
     
     host = os.getenv('API_HOST', '0.0.0.0')
-    port = int(os.environ.get("PORT", 5000)) 
-    debug = os.getenv('FLASK_DEBUG', 'True') == 'True'
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.getenv('FLASK_DEBUG', 'False') == 'True'
     app.run(host="0.0.0.0", port=port)
     
     print("=" * 70)
