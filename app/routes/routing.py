@@ -282,3 +282,46 @@ def find_transfer_routes():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': f'Internal server error: {str(e)}'}), 500
+@bp.route('/routes/walking-path', methods=['POST', 'OPTIONS'])
+def get_walking_path():
+    """Get realistic walking path between two points using OSRM"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'Request body required'}), 400
+        
+        start_lat = data.get('start_lat')
+        start_lon = data.get('start_lon')
+        end_lat = data.get('end_lat')
+        end_lon = data.get('end_lon')
+        
+        if None in [start_lat, start_lon, end_lat, end_lon]:
+            return jsonify({'success': False, 'error': 'Missing coordinates'}), 400
+        
+        from app.services.walking_service import walking_service
+        
+        path_result = walking_service.get_walking_route(
+            float(start_lat), float(start_lon),
+            float(end_lat), float(end_lon)
+        )
+        
+        if path_result:
+            return jsonify({
+                'success': True,
+                'path': path_result['path'],
+                'distance_meters': path_result['distance_meters'],
+                'duration_minutes': path_result['duration_minutes']
+            }), 200
+        else:
+            # Return straight line fallback
+            return jsonify({
+                'success': True,
+                'path': [[float(start_lat), float(start_lon)], [float(end_lat), float(end_lon)]],
+                'fallback': True
+            }), 200
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500

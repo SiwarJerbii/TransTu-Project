@@ -4,6 +4,8 @@ Routing Service - Find routes between locations
 from typing import Dict, List, Optional, Tuple
 from app.services.distance_service import distance_service
 from app.utils.data_loader import data_loader
+from app.services.walking_service import walking_service
+
 
 class RoutingService:
     """Service for finding bus routes between locations"""
@@ -141,6 +143,27 @@ class RoutingService:
                         validation['estimated_minutes'] + 
                         walking_time_end
                     )
+                    # Get realistic walking path to start stop
+                walk_to_start = walking_service.get_walking_route(
+                    start_lat, start_lon,
+                    start_stop['latitude'], start_stop['longitude']
+                )
+                if not walk_to_start:
+                    walk_to_start = walking_service.get_straight_line_fallback(
+                        start_lat, start_lon,
+                        start_stop['latitude'], start_stop['longitude']
+                    )
+
+                # Get realistic walking path from end stop
+                walk_from_end = walking_service.get_walking_route(
+                    end_stop['latitude'], end_stop['longitude'],
+                    end_lat, end_lon
+                )
+                if not walk_from_end:
+                    walk_from_end = walking_service.get_straight_line_fallback(
+                        end_stop['latitude'], end_stop['longitude'],
+                        end_lat, end_lon
+                    )
                 
  # Get intermediate stops between start and end
                 intermediate_stops = []
@@ -179,10 +202,12 @@ class RoutingService:
                     },
                     'intermediate_stops': intermediate_stops,
                     'walking': {
-                        'to_start_meters': walking_to_start,
-                        'to_start_minutes': walking_time_start,
-                        'from_end_meters': walking_to_end,
-                        'from_end_minutes': walking_time_end
+                        'to_start_meters': walk_to_start['distance_meters'],
+                        'to_start_minutes': round(walk_to_start['duration_minutes']),
+                        'to_start_path': walk_to_start['path'],  
+                        'from_end_meters': walk_from_end['distance_meters'],
+                        'from_end_minutes': round(walk_from_end['duration_minutes']),
+                        'from_end_path': walk_from_end['path']  
                     },
                     'validation': validation,
                     'total_time_minutes': total_time

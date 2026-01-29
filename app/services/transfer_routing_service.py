@@ -116,7 +116,33 @@ class TransferRoutingService:
         print(f"Found {len(results)} valid transfer routes")
         
         results.sort(key=lambda x: x['total_time_minutes'])
-        return results[:max_results]
+        seen_combinations = {}
+
+        for route in results:  # ← CHANGE 'routes' TO 'results'
+            # Create a unique key for this bus combination
+            bus1 = route['segments'][1]['bus_line']  # First bus
+            bus2 = route['segments'][3]['bus_line']  # Second bus (after transfer)
+            combination_key = f"{bus1}_{bus2}"
+            
+            # Keep only the fastest route for each combination
+            if combination_key not in seen_combinations:
+                seen_combinations[combination_key] = route
+            else:
+                # Compare total time, keep the faster one
+                existing_time = seen_combinations[combination_key]['total_time_minutes']
+                new_time = route['total_time_minutes']
+                if new_time < existing_time:
+                    seen_combinations[combination_key] = route
+
+        # Convert back to list
+        deduplicated_routes = list(seen_combinations.values())
+
+        # Sort by total time
+        deduplicated_routes.sort(key=lambda x: x['total_time_minutes'])
+
+        # Return limited results
+        return deduplicated_routes[:max_results]
+    
     
     def _find_buses_near_location_for_boarding(self, lat: float, lon: float, 
                                                 min_stops_ahead: int = 5) -> List[Dict]:
@@ -180,40 +206,40 @@ class TransferRoutingService:
         return stops        
         
     def _find_buses_near_location(self, lat: float, lon: float) -> List[Dict]:
-        """
-        Find all buses with stops within walking distance (legacy method).
-        Used for finding destination stops.
-        """
-        nearby_buses = []
-        
-        for route in self.bus_data['routes']:
-            nearest_stop = None
-            min_distance = float('inf')
+            """
+            Find all buses with stops within walking distance (legacy method).
+            Used for finding destination stops.
+            """
+            nearby_buses = []
             
-            for stop in route['stops']:
-                distance = distance_service.haversine_distance(
-                    lat, lon,
-                    stop['latitude'], stop['longitude']
-                )
+            for route in self.bus_data['routes']:
+                nearest_stop = None
+                min_distance = float('inf')
                 
-                if distance < min_distance and distance <= self.max_walking_distance:
-                    min_distance = distance
-                    nearest_stop = {**stop, 'distance': round(distance)}
+                for stop in route['stops']:
+                    distance = distance_service.haversine_distance(
+                        lat, lon,
+                        stop['latitude'], stop['longitude']
+                    )
+                    
+                    if distance < min_distance and distance <= self.max_walking_distance:
+                        min_distance = distance
+                        nearest_stop = {**stop, 'distance': round(distance)}
+                
+                if nearest_stop:
+                    nearby_buses.append({
+                        'route': route,
+                        'nearest_stop': nearest_stop
+                    })
             
-            if nearest_stop:
-                nearby_buses.append({
-                    'route': route,
-                    'nearest_stop': nearest_stop
-                })
-        
-        return nearby_buses
+            return nearby_buses
     
     def _build_transfer_route(self, start_lat: float, start_lon: float,
                              bus_A: Dict, boarding_A: Dict, transfer_A: Dict,
                              bus_B: Dict, boarding_B: Dict, alighting_B: Dict,
                              end_lat: float, end_lon: float,
                              walk_to_end: float) -> Dict:
-        """Build complete transfer route details with timing"""
+        """Build complete transfer route details with timing - FAST VERSION (no OSRM)"""
         
         transfer_distance = distance_service.haversine_distance(
             transfer_A['latitude'], transfer_A['longitude'],
@@ -223,8 +249,9 @@ class TransferRoutingService:
         if transfer_distance > self.max_walking_distance:
             return {'valid': False, 'reason': 'Transfer distance too far'}
         
-        walk_to_start = boarding_A['distance']
+        # ===== USE SIMPLE DISTANCE CALCULATIONS (NO API CALLS) =====
         
+        walk_to_start = boarding_A['distance']
         walk_time_start = round(distance_service.calculate_walking_time(walk_to_start))
         
         stops_on_A = transfer_A['stop_number'] - boarding_A['stop_number']
@@ -258,6 +285,7 @@ class TransferRoutingService:
                     'instruction': f'Walk to {boarding_A["stop_name"]}',
                     'distance_meters': walk_to_start,
                     'duration_minutes': walk_time_start,
+                    'path': None,  # No OSRM path - will use straight line fallback
                     'details': {
                         'to_stop': boarding_A['stop_name'],
                         'coordinates': {
@@ -298,6 +326,7 @@ class TransferRoutingService:
                     'instruction': f'Walk to {boarding_B["stop_name"]} for transfer',
                     'distance_meters': round(transfer_distance),
                     'duration_minutes': transfer_walk_time,
+                    'path': None,  # No OSRM path - will use straight line fallback
                     'details': {
                         'from_stop': transfer_A['stop_name'],
                         'to_stop': boarding_B['stop_name'],
@@ -336,6 +365,7 @@ class TransferRoutingService:
                     'instruction': 'Walk to destination',
                     'distance_meters': round(walk_to_end),
                     'duration_minutes': walk_time_end,
+                    'path': None,  # No OSRM path - will use straight line fallback
                     'details': {
                         'from_stop': alighting_B['stop_name'],
                         'to_destination': True
