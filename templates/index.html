@@ -4,6 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TuniKar </title>
+    <meta name="description" content="TuniKar - Trouvez facilement votre itinéraire en bus dans le Grand Tunis. Recherche d'arrêts, lignes de bus et correspondances.">
+    <meta name="keywords" content="bus tunis, transport tunis, transtu, itinéraire bus, grand tunis, tunisie transport">
+    <meta name="author" content="Votre Nom">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph (Facebook, LinkedIn) -->
+    <meta property="og:title" content="TuniKar - Guide des trajets en bus du Grand Tunis">
+    <meta property="og:description" content="Trouvez facilement votre itinéraire en bus dans le Grand Tunis.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://votre-domaine.com">
+    <meta property="og:image" content="https://votre-domaine.com/preview-image.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TuniKar - Guide des trajets en bus">
+    <meta name="twitter:description" content="Trouvez votre itinéraire en bus dans le Grand Tunis.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="static\tunikar_logo_minimal.svg">
+
+    
+    <!-- Theme Color (mobile browser) -->
+    <meta name="theme-color" content="#2C3E2D">
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -811,7 +834,16 @@
                 height: 40vh;
             }
         }
-        
+        .disclaimer-text {
+            margin-top: 1.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(198, 123, 92, 0.1);
+            border: 1px solid rgba(198, 123, 92, 0.3);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--earth-brown);
+            max-width: 300px;
+        }
         /* Leaflet Popup Customization */
         .leaflet-popup-content-wrapper {
             border-radius: 12px;
@@ -934,6 +966,9 @@
                     </svg>
                     <h3>Planifiez Votre Trajet</h3>
                     <p>Entrez votre départ et destination pour trouver les lignes de bus disponibles</p>
+                     <div class="disclaimer-text">
+                        ⚠️ Projet étudiant - Les informations peuvent contenir des erreurs.
+                    </div>
                 </div>
                 
                 <!-- Results Container -->
@@ -1050,38 +1085,63 @@
                 intermediate: '#8FA889' 
             };
             
-            const sizes = {
-                start: [32, 32],
-                end: [32, 32],
-                stop: [14, 14],
-                transfer: [24, 24],
-                intermediate: [10, 10]
-            };
-            const classes = {
-                'start': 'marker-start',
-                'end': 'marker-end',
-                'stop': 'marker-stop',
-                'transfer': 'marker-transfer',
-                'intermediate': 'marker-intermediate'  // ADD THIS LINE
-            };
-            const size = sizes[type];
             const color = colors[type];
-            const borderColor = type === 'transfer' ? '#C67B5C' : '#FFFFFF';
-            const borderWidth = type === 'stop' ? 2 : 3;
             
-            return L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="
-                    width: ${size[0]}px;
-                    height: ${size[1]}px;
-                    background: ${color};
-                    border: ${borderWidth}px solid ${borderColor};
-                    border-radius: 50%;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                "></div>`,
-                iconSize: size,
-                iconAnchor: [size[0]/2, size[1]/2]
-            });
+            // Use SVG location pin for start and end
+            if (type === 'start' || type === 'end') {
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<svg width="30" height="40" viewBox="0 0 24 32" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12zm0 16c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z" fill="${color}"/>
+                        <circle cx="12" cy="12" r="4" fill="white"/>
+                    </svg>`,
+                    iconSize: [30, 40],
+                    iconAnchor: [15, 40]  // Anchor at bottom center of pin
+                });
+            } else if (type === 'transfer') {
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="
+                        width: 20px;
+                        height: 20px;
+                        background: ${color};
+                        border: 3px solid #C67B5C;
+                        border-radius: 50%;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                    "></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+            } else if (type === 'stop') {
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="
+                        width: 12px;
+                        height: 12px;
+                        background: ${color};
+                        border: 2px solid white;
+                        border-radius: 50%;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    "></div>`,
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+            } else {
+                // intermediate stops - small dots
+                return L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="
+                        width: 8px;
+                        height: 8px;
+                        background: ${color};
+                        border: 2px solid white;
+                        border-radius: 50%;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    "></div>`,
+                    iconSize: [8, 8],
+                    iconAnchor: [4, 4]
+                });
+            }
         }
         
         // ============================================================
@@ -1172,35 +1232,41 @@
             start: -1,
             end: -1
         };
+        const commonPlaces = {
+            'lac': 'Les Berges du Lac Tunis',
+            'lac 1': 'Les Berges du Lac Tunis',
+            'lac 2': 'Les Berges du Lac 2 Tunis',
+            'lac2': 'Les Berges du Lac 2 Tunis',
+            'bardo': 'Le Bardo Tunis',
+            'marsa': 'La Marsa Tunis',
+            'carthage': 'Carthage Tunis',
+            'ariana': 'Ariana Tunisie',
+            'menzah': 'El Menzah Tunis',
+            'manar': 'El Manar Tunis',
+            'centre ville': 'Centre Ville Tunis',
+            'habib bourguiba': 'Avenue Habib Bourguiba Tunis'
+        };
 
         async function searchPlaces(query) {
-            // Search for places using Nominatim API
             if (!query || query.length < autocompleteConfig.minChars) {
                 return [];
             }
             
             try {
-                // Add "Tunis" to query if not already present for better local results
-                let searchQuery = query;
-                const tunisKeywords = ['tunis', 'تونس', 'ariana', 'ben arous', 'manouba', 'lac', 'carthage', 'marsa', 'bardo'];
-                const queryLower = query.toLowerCase();
-                const hasTunisKeyword = tunisKeywords.some(kw => queryLower.includes(kw));
-                
-                // If query doesn't mention Tunis area, append "Tunis" for better results
-                if (!hasTunisKeyword && query.length < 10) {
-                    searchQuery = `${query}, Tunis`;
-                }
+                // Check if query matches a common place
+                const queryLower = query.toLowerCase().trim();
+                const mappedQuery = commonPlaces[queryLower] || query;
                 
                 const params = new URLSearchParams({
-                    q: searchQuery,
+                    q: mappedQuery,
                     format: 'json',
-                    limit: autocompleteConfig.maxResults + 3, // Get extra results to filter
+                    limit: autocompleteConfig.maxResults,
                     countrycodes: 'tn',
                     addressdetails: 1,
                     dedupe: 1
                 });
                 
-                const response = await fetch(
+                let response = await fetch(
                     `https://nominatim.openstreetmap.org/search?${params}`,
                     { 
                         headers: { 
@@ -1212,16 +1278,17 @@
                 
                 if (!response.ok) return [];
                 
-                const data = await response.json();
+                let data = await response.json();
                 
-                // If no results with "Tunis", try original query
-                if (data.length === 0 && searchQuery !== query) {
+                // If no results or few results, try with "Tunis" appended
+                if (data.length < 2) {
                     const params2 = new URLSearchParams({
-                        q: query,
+                        q: `${query} Tunis`,
                         format: 'json',
                         limit: autocompleteConfig.maxResults,
                         countrycodes: 'tn',
-                        addressdetails: 1
+                        addressdetails: 1,
+                        dedupe: 1
                     });
                     
                     const response2 = await fetch(
@@ -1236,18 +1303,42 @@
                     
                     if (response2.ok) {
                         const data2 = await response2.json();
-                        return data2.slice(0, autocompleteConfig.maxResults).map(place => ({
-                            name: formatPlaceName(place),
-                            fullName: place.display_name,
-                            lat: parseFloat(place.lat),
-                            lon: parseFloat(place.lon),
-                            type: place.type,
-                            category: place.class
-                        }));
+                        // Combine results, removing duplicates
+                        const existingIds = new Set(data.map(p => p.place_id));
+                        data2.forEach(place => {
+                            if (!existingIds.has(place.place_id)) {
+                                data.push(place);
+                            }
+                        });
                     }
                 }
                 
-                // Prioritize results in Greater Tunis area (lat: 36.4-37.1, lon: 9.5-10.6)
+                // If still no results, try with "Berges du Lac" for "lac" queries
+                if (data.length === 0 && query.toLowerCase().includes('lac')) {
+                    const params3 = new URLSearchParams({
+                        q: 'Berges du Lac Tunis',
+                        format: 'json',
+                        limit: autocompleteConfig.maxResults,
+                        countrycodes: 'tn',
+                        addressdetails: 1
+                    });
+                    
+                    const response3 = await fetch(
+                        `https://nominatim.openstreetmap.org/search?${params3}`,
+                        { 
+                            headers: { 
+                                'User-Agent': 'TuniKarApp/1.0',
+                                'Accept-Language': 'fr,ar,en'
+                            }
+                        }
+                    );
+                    
+                    if (response3.ok) {
+                        data = await response3.json();
+                    }
+                }
+                
+                // Prioritize results in Greater Tunis area
                 const sortedData = data.sort((a, b) => {
                     const aInTunis = isInGreaterTunis(parseFloat(a.lat), parseFloat(a.lon));
                     const bInTunis = isInGreaterTunis(parseFloat(b.lat), parseFloat(b.lon));
@@ -1321,7 +1412,8 @@
             
             // Add click handlers
             dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // Prevent blur from firing
                     selectAutocompleteItem(type, item);
                 });
             });
@@ -1479,7 +1571,7 @@
             
             // Hide dropdown on blur (with small delay to allow click on item)
             input.addEventListener('blur', () => {
-                setTimeout(() => hideAutocomplete(type), 200);
+                setTimeout(() => hideAutocomplete(type), 300);
             });
             
             // Show dropdown on focus if there's text
@@ -1960,8 +2052,20 @@
         async function selectRoute(index) {
             // Update selection state
             document.querySelectorAll('.route-card').forEach((card, i) => {
-                card.classList.toggle('selected', i === index);
-            });
+                if (i === index) {
+                            card.classList.add('selected');
+                            card.classList.add('expanded');  // Auto-expand selected route
+                            // Update button text
+                            const btn = card.querySelector('.expand-btn span');
+                            if (btn) btn.textContent = 'Masquer Détails';
+                        } else {
+                            card.classList.remove('selected');
+                            card.classList.remove('expanded');  // Collapse other routes
+                            // Reset button text
+                            const btn = card.querySelector('.expand-btn span');
+                            if (btn) btn.textContent = 'Voir Détails';
+                        }
+                    });
             
              selectedRouteIndex = index;
             await displayRouteOnMap(allRoutes[index]);
@@ -2246,24 +2350,37 @@
         
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('visible', show);
-            document.getElementById('results-container').style.display = show ? 'none' : 'block';
-            document.getElementById('empty-state').style.display = 'none';
+                if (show) {
+                    document.getElementById('results-container').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'none';
+                }
         }
         
         function showEmptyResults(message = null) {
-    const defaultMessage = "Aucun itinéraire de bus trouvé entre ces emplacements.";
-    const displayMessage = message || defaultMessage;
-    
-    document.getElementById('empty-state').innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M9.172 16.172a4 4 0 0 1 5.656 0M9 10h.01M15 10h.01M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
-        </svg>
-        <h3>Aucun Itinéraire Trouvé</h3>
-        <p>${displayMessage}</p>
-    `;
-    document.getElementById('empty-state').style.display = 'flex';
-    document.getElementById('results-container').innerHTML = '';
-}
+            const defaultMessage = "Aucun itinéraire de bus trouvé entre ces emplacements.";
+            const displayMessage = message || defaultMessage;
+            
+            // Hide loading
+            document.getElementById('loading').classList.remove('visible');
+            
+            // Clear results container
+            document.getElementById('results-container').innerHTML = '';
+            document.getElementById('results-container').style.display = 'none';
+            
+            // Show empty state with message
+            const emptyState = document.getElementById('empty-state');
+            emptyState.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9.172 16.172a4 4 0 0 1 5.656 0M9 10h.01M15 10h.01M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+                </svg>
+                <h3>Aucun Itinéraire Trouvé</h3>
+                <p>${displayMessage}</p>
+                <div class="disclaimer-text" style="margin-top: 1rem;">
+                    💡 Conseil : Essayez des adresses plus proches des grandes artères ou des arrêts de bus connus.
+                </div>
+            `;
+            emptyState.style.display = 'flex';
+        }
         
         function showError(message) {
             const errorEl = document.getElementById('error-message');
