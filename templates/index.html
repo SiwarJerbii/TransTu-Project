@@ -1589,7 +1589,7 @@
         
         async function geocodeAddress(address) {
             try {
-                const response = await fetch(`${API_BASE}/api/geocode`, {
+                const response = await fetch(`${API_BASE}/geocode`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ address })
@@ -1778,7 +1778,7 @@
         
         async function fetchDirectRoutes() {
             try {
-                const response = await fetch(`${API_BASE}/api/routes/direct`, {
+                const response = await fetch(`${API_BASE}/routes/direct`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1797,7 +1797,7 @@
         
         async function fetchTransferRoutes() {
             try {
-                const response = await fetch(`${API_BASE}/api/routes/transfer`, {
+                const response = await fetch(`${API_BASE}/routes/transfer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2085,7 +2085,7 @@
 
         async function fetchWalkingPath(startLat, startLon, endLat, endLon) {
             try {
-                const response = await fetch(`${API_BASE}/api/routes/walking-path`, {
+                const response = await fetch(`${API_BASE}/routes/walking-path`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
