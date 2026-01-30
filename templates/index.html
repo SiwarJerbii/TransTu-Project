@@ -1589,7 +1589,7 @@
         
         async function geocodeAddress(address) {
             try {
-                const response = await fetch(`${API_BASE}/geocode`, {
+                const response = await fetch(`${API_BASE}/api/geocode`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ address })
@@ -1705,9 +1705,16 @@
         // ============================================================
         
         async function searchRoutes() {
+            console.log('🔍 searchRoutes called');
+            console.log('startCoords:', startCoords);
+            console.log('endCoords:', endCoords);
+            
             // Get coordinates from inputs if not set by map
             const startInput = document.getElementById('start-input').value.trim();
             const endInput = document.getElementById('end-input').value.trim();
+            
+            console.log('startInput:', startInput);
+            console.log('endInput:', endInput);
             
             // Validate inputs
             if (!startInput && !startCoords) {
@@ -1748,19 +1755,24 @@
                         return;
                     }
                 }
-                
+                console.log('📡 About to fetch routes...');
+                console.log('Using startCoords:', startCoords);
+                console.log('Using endCoords:', endCoords);
                 // Fetch both direct and transfer routes
                 const [directRoutes, transferRoutes] = await Promise.all([
                     fetchDirectRoutes(),
                     fetchTransferRoutes()
                 ]);
-                
+                console.log('📦 directRoutes:', directRoutes);
+                console.log('📦 transferRoutes:', transferRoutes);
+
                 // Combine and process routes
                 allRoutes = [
                     ...directRoutes.map(r => ({ ...r, routeType: 'direct', transfers: 0 })),
                     ...transferRoutes.map(r => ({ ...r, routeType: 'transfer', transfers: 1 }))
                 ];
-                
+                console.log('📊 allRoutes:', allRoutes);
+                console.log('📊 allRoutes.length:', allRoutes.length);
                 if (allRoutes.length === 0) {
                     showEmptyResults("Aucun itinéraire de bus trouvé dans un rayon de 500m. Essayez d'autres adresses ou rapprochez vos points de départ/arrivée des arrêts de bus.");
                 } else {
@@ -1778,7 +1790,7 @@
         
         async function fetchDirectRoutes() {
             try {
-                const response = await fetch(`${API_BASE}/routes/direct`, {
+                const response = await fetch(`${API_BASE}/api/routes/direct`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1797,7 +1809,7 @@
         
         async function fetchTransferRoutes() {
             try {
-                const response = await fetch(`${API_BASE}/routes/transfer`, {
+                const response = await fetch(`${API_BASE}/api/routes/transfer`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1845,7 +1857,7 @@
         function displayRoutes(routes) {
             const container = document.getElementById('results-container');
             document.getElementById('empty-state').style.display = 'none';
-            
+            container.style.display = 'block';
             container.innerHTML = `
                 <div class="results-header">
                     <span class="results-count"><strong>${routes.length}</strong> itinéraires trouvés</span>
@@ -2085,7 +2097,7 @@
 
         async function fetchWalkingPath(startLat, startLon, endLat, endLon) {
             try {
-                const response = await fetch(`${API_BASE}/routes/walking-path`, {
+                const response = await fetch(`${API_BASE}/api/routes/walking-path`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
