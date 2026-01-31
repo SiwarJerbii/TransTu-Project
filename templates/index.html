@@ -881,7 +881,14 @@
             .main-container {
                 height: calc(100vh - 50px);
             }
-            
+            .sort-buttons {
+                gap: 0.35rem;
+            }
+
+            .sort-btn {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.65rem;
+            }
             /* Map smaller on phone */
             .right-panel {
                 height: 30vh;
@@ -1092,6 +1099,50 @@
         .results-section::-webkit-scrollbar-thumb:hover {
             background: var(--earth-sage);
         }
+        /* Sort Buttons */
+        .sort-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 0.4rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sort-btn:hover {
+            border-color: var(--earth-sage);
+            color: var(--text-primary);
+        }
+
+        .sort-btn.active {
+            background: var(--earth-forest);
+            color: white;
+            border-color: var(--earth-forest);
+        }
+
+        .results-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+
+        .results-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -1227,6 +1278,7 @@
         let allRoutes = [];
         let selectedRouteIndex = -1;
         let clickMode = null; // 'start' or 'end'
+        let currentSort = 'time';
         
         // Greater Tunis bounds
         const TUNIS_CENTER = [36.8065, 10.1815];
@@ -2030,13 +2082,37 @@
         // ============================================================
         
         function sortAndDisplayRoutes() {
-            // Always sort by fastest (time)
-            const sorted = [...allRoutes].sort((a, b) => {
-                return getTotalTime(a) - getTotalTime(b);
-            });
+            sortRoutes(currentSort);
+        }
+
+        function sortRoutes(sortType) {
+            currentSort = sortType;
+            
+            let sorted = [...allRoutes];
+            
+            switch(sortType) {
+                case 'time':
+                    sorted.sort((a, b) => getTotalTime(a) - getTotalTime(b));
+                    break;
+                case 'transfers':
+                    sorted.sort((a, b) => {
+                        // Direct routes (0 transfers) first, then by time
+                        const transfersA = a.routeType === 'direct' ? 0 : 1;
+                        const transfersB = b.routeType === 'direct' ? 0 : 1;
+                        if (transfersA !== transfersB) return transfersA - transfersB;
+                        return getTotalTime(a) - getTotalTime(b);
+                    });
+                    break;
+                case 'walking':
+                    sorted.sort((a, b) => getTotalWalking(a) - getTotalWalking(b));
+                    break;
+                default:
+                    sorted.sort((a, b) => getTotalTime(a) - getTotalTime(b));
+            }
             
             displayRoutes(sorted);
         }
+
         
         function getTotalTime(route) {
             if (route.routeType === 'direct') {
@@ -2058,20 +2134,43 @@
             container.style.display = 'block';
             container.innerHTML = `
                 <div class="results-header">
-                    <span class="results-count"><strong>${routes.length}</strong> itinéraires trouvés</span>
+                    <div class="results-top-row">
+                        <span class="results-count"><strong>${routes.length}</strong> itinéraires trouvés</span>
+                    </div>
+                    <div class="sort-buttons">
+                        <button class="sort-btn ${currentSort === 'time' ? 'active' : ''}" data-sort="time">
+                            ⏱️ Plus rapide
+                        </button>
+                        <button class="sort-btn ${currentSort === 'transfers' ? 'active' : ''}" data-sort="transfers">
+                            🔄 Moins de changements
+                        </button>
+                        <button class="sort-btn ${currentSort === 'walking' ? 'active' : ''}" data-sort="walking">
+                            🚶 Moins de marche
+                        </button>
+                    </div>
                 </div>
                 ${routes.map((route, index) => createRouteCard(route, index)).join('')}
             `;
             
-            // Add click handlers
+            // Add click handlers for route cards
             container.querySelectorAll('.route-card').forEach((card, index) => {
                 card.addEventListener('click', () => selectRoute(index));
             });
             
+            // Add click handlers for expand buttons
             container.querySelectorAll('.expand-btn').forEach((btn, index) => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     toggleRouteExpand(index);
+                });
+            });
+            
+            // Add click handlers for sort buttons
+            container.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const sortType = btn.dataset.sort;
+                    sortRoutes(sortType);
                 });
             });
         }
